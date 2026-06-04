@@ -7,9 +7,20 @@ import '../../core/auth/auth_notifier.dart';
 import '../../core/models/models.dart';
 import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
 import '../editor/editor_catalog_body.dart';
+
+const _genreFilters = [
+  'Todos',
+  'Romance',
+  'Mistério',
+  'Ficção Científica',
+  'Fantasia',
+  'História',
+  'Biografia',
+];
 
 class BooksScreen extends ConsumerStatefulWidget {
   const BooksScreen({super.key});
@@ -26,6 +37,7 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   String? _error;
+  String _genero = 'Todos';
 
   bool get _hasMore => _page < _pages;
 
@@ -44,13 +56,9 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients || _loading || _loadingMore || !_hasMore) {
-      return;
-    }
+    if (!_scrollController.hasClients || _loading || _loadingMore || !_hasMore) return;
     final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 280) {
-      _load(_page + 1);
-    }
+    if (position.pixels >= position.maxScrollExtent - 280) _load(_page + 1);
   }
 
   Future<void> _load(int page) async {
@@ -66,7 +74,10 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
     });
 
     try {
-      final res = await ref.read(readerRepositoryProvider).books(page: page);
+      final res = await ref.read(readerRepositoryProvider).books(
+            page: page,
+            genero: _genero == 'Todos' ? null : _genero,
+          );
       if (!mounted) return;
       setState(() {
         if (page == 1) _items.clear();
@@ -90,117 +101,188 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
     }
   }
 
+  void _onGenero(String g) {
+    if (_genero == g) return;
+    setState(() => _genero = g);
+    _load(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (ref.watch(authProvider).role == UserRole.editor) {
       return const EditorCatalogBody();
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Catálogo')),
-      body: RefreshIndicator(
-        onRefresh: () => _load(1),
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            if (_loading && _items.isEmpty)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_error != null && _items.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: Text(_error!)),
-              )
-            else if (_items.isEmpty)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: Text('Nenhum livro no catálogo.')),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) {
-                      final book = _items[i];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Material(
-                          color: AppTheme.surface,
-                          clipBehavior: Clip.antiAlias,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(
-                              color: Colors.black.withValues(alpha: 0.06),
-                            ),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            leading: BookCover(
-                              url: book.imagemUrl,
-                              width: 48,
-                              height: 64,
-                            ),
-                            title: Text(
-                              book.titulo,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                            subtitle: Text('${book.autor} · R\$ ${book.preco}'),
-                            trailing: _stockChip(book.statusEstoque),
-                            onTap: () => context.push('/livro/${book.id}'),
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: _items.length,
-                  ),
-                ),
-              ),
-            if (_loadingMore)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-            if (!_loading && !_hasMore && _items.isNotEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 24),
-                  child: Center(
-                    child: Text(
-                      'Fim do catálogo',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 13),
+    return RefreshIndicator(
+      onRefresh: () => _load(1),
+      color: AppTheme.primary,
+      child: CustomScrollView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 8, AppTheme.marginMobile, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    readOnly: true,
+                    onTap: () => context.go('/buscar'),
+                    decoration: const InputDecoration(
+                      hintText: 'Busque seu próximo livro…',
+                      prefixIcon: Icon(Icons.search_rounded, color: AppTheme.onSurfaceVariant),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _genreFilters.map((g) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: BibGenreChip(
+                            label: g,
+                            selected: _genero == g,
+                            onTap: () => _onGenero(g),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_loading && _items.isEmpty)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_error != null && _items.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: Text(_error!)),
+            )
+          else if (_items.isEmpty)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: Text('Nenhum livro no catálogo.')),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 0, AppTheme.marginMobile, 24),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: AppTheme.gutterMobile,
+                  crossAxisSpacing: AppTheme.gutterMobile,
+                  childAspectRatio: 0.58,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => _MarketBookCard(
+                    book: _items[i],
+                    onTap: () => context.push('/livro/${_items[i].id}'),
+                  ),
+                  childCount: _items.length,
                 ),
               ),
-          ],
-        ),
+            ),
+          if (_loadingMore)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+        ],
       ),
     );
   }
+}
 
-  Widget? _stockChip(String? status) {
-    if (status == null) return null;
-    final (label, color) = switch (status) {
-      'esgotado' => ('Esgotado', AppTheme.error),
-      'baixo' => ('Baixo', Colors.orange),
-      _ => ('OK', Colors.green),
-    };
-    return Chip(
-      label: Text(label, style: TextStyle(color: color, fontSize: 11)),
-      backgroundColor: color.withValues(alpha: 0.1),
-      side: BorderSide.none,
-      visualDensity: VisualDensity.compact,
+class _MarketBookCard extends StatelessWidget {
+  const _MarketBookCard({required this.book, required this.onTap});
+
+  final Book book;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.surfaceWhite,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppTheme.radiusLg,
+        side: BorderSide(color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(boxShadow: AppTheme.cardShadow, borderRadius: AppTheme.radiusLg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: book.imagemUrl != null && book.imagemUrl!.isNotEmpty
+                      ? BookCover(url: book.imagemUrl, width: 200, height: 400, borderRadius: 0)
+                      : const ColoredBox(
+                          color: AppTheme.primarySoft,
+                          child: Center(
+                            child: Icon(Icons.menu_book_rounded, color: AppTheme.primary, size: 40),
+                          ),
+                        ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.titulo,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.titleSerif.copyWith(fontSize: 15),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      book.autor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionSans,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        BibPriceText(book.preco, style: AppTheme.titleSerif.copyWith(fontSize: 15)),
+                        if (book.genero != null)
+                          Flexible(
+                            child: Text(
+                              book.genero!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: AppTheme.captionSans.copyWith(
+                                color: AppTheme.secondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

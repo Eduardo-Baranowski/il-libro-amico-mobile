@@ -1,6 +1,6 @@
-# Lumina Library — Mobile (Flutter)
+# Bibliotheca — Mobile (Flutter)
 
-App Flutter para a API REST do projeto [`doc`](../doc).
+App Flutter para a API REST do projeto [`doc`](../doc). Interface inspirada no design Stitch **Bibliotheca Aesthetic** (parchment, terracotta, Literata + Plus Jakarta Sans).
 
 ## Pré-requisitos
 

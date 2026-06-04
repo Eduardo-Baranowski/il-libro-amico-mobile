@@ -8,6 +8,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/models/admin_editor_models.dart';
 import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart' show BookCover, UserAvatar;
 import '../../data/search_repository.dart';
 
@@ -78,34 +79,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ? <SearchEditorHit>[]
         : result?.editors ?? [];
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Buscar')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: TextField(
-              controller: _controller,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Livros, autores, usuários…',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: _onQueryChanged,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 8, AppTheme.marginMobile, 0),
+          child: TextField(
+            controller: _controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Título, autor, usuário ou ISBN…',
+              prefixIcon: Icon(Icons.search_rounded),
             ),
+            onChanged: _onQueryChanged,
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                _scopeChip('Tudo', _SearchScope.all),
-                _scopeChip('Livros', _SearchScope.books),
-                _scopeChip('Usuários', _SearchScope.users),
-                _scopeChip('Editoras', _SearchScope.editors),
-              ],
-            ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.marginMobile, vertical: 8),
+          child: Row(
+            children: [
+              _scopeChip('Tudo', _SearchScope.all),
+              _scopeChip('Livros', _SearchScope.books),
+              _scopeChip('Usuários', _SearchScope.users),
+              _scopeChip('Editoras', _SearchScope.editors),
+            ],
           ),
+        ),
           if (_loading) const LinearProgressIndicator(minHeight: 2),
           Expanded(
             child: _error != null
@@ -168,25 +167,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ],
                       ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
   Widget _scopeChip(String label, _SearchScope scope) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
+      child: BibGenreChip(
+        label: label,
         selected: _scope == scope,
-        onSelected: (_) => setState(() => _scope = scope),
+        onTap: () => setState(() => _scope = scope),
       ),
     );
   }
 
   Widget _sectionTitle(String text) => Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 4),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        child: Text(text, style: AppTheme.headlineSerif.copyWith(fontSize: 18)),
       );
 
   String _roleLabel(UserRole papel) => switch (papel) {

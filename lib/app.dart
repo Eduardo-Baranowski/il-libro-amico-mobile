@@ -12,7 +12,7 @@ class LuminaApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'Lumina Library',
+      title: 'Bibliotheca',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       routerConfig: router,

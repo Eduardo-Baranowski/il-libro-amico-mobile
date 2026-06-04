@@ -122,16 +122,7 @@ class _EditorCatalogBodyState extends ConsumerState<EditorCatalogBody> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meu catálogo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.mail_outline),
-            tooltip: 'Solicitações',
-            onPressed: () => context.push('/editor/solicitacoes'),
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.background,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),
         icon: const Icon(Icons.add),
@@ -140,7 +131,22 @@ class _EditorCatalogBodyState extends ConsumerState<EditorCatalogBody> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 8, 8, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text('Meu catálogo', style: AppTheme.headlineSerif.copyWith(fontSize: 22)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.mail_outline_rounded, color: AppTheme.primary),
+                  tooltip: 'Solicitações',
+                  onPressed: () => context.push('/editor/solicitacoes'),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 0, AppTheme.marginMobile, 0),
             child: TextField(
               controller: _searchController,
               decoration: const InputDecoration(

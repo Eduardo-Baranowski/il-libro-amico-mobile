@@ -9,7 +9,7 @@ class BookCover extends StatelessWidget {
     this.url,
     this.width = 56,
     this.height = 72,
-    this.borderRadius = 12,
+    this.borderRadius = 2,
   });
 
   final String? url;
@@ -40,7 +40,7 @@ class BookCover extends StatelessWidget {
     return Container(
       color: AppTheme.primarySoft,
       alignment: Alignment.center,
-      child: const Icon(Icons.menu_book_rounded, color: AppTheme.primary),
+      child: const Icon(Icons.menu_book_rounded, color: AppTheme.primary, size: 28),
     );
   }
 }
@@ -68,13 +68,13 @@ class UserAvatar extends StatelessWidget {
     }
     return CircleAvatar(
       radius: radius,
-      backgroundColor: AppTheme.primarySoft,
+      backgroundColor: AppTheme.secondaryContainer,
       child: Text(
         initial,
         style: TextStyle(
-          color: AppTheme.primary,
+          color: AppTheme.onSecondaryContainer,
           fontWeight: FontWeight.w800,
-          fontSize: radius * 0.9,
+          fontSize: radius * 0.85,
         ),
       ),
     );

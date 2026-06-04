@@ -1,0 +1,133 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/api/api_client.dart';
+import '../core/providers.dart';
+import '../core/models/models.dart';
+
+final readerRepositoryProvider = Provider<ReaderRepository>((ref) {
+  return ReaderRepository(ref.watch(apiClientProvider));
+});
+
+class ReaderRepository {
+  ReaderRepository(this._api);
+
+  final ApiClient _api;
+
+  Future<PaginatedResponse<FeedItem>> feed({int page = 1, int perPage = 10}) {
+    return _api.get(
+      '/reader/feed',
+      query: {'page': '$page', 'per_page': '$perPage'},
+      parser: (data) => PaginatedResponse.fromJson(
+        data as Map<String, dynamic>,
+        FeedItem.fromJson,
+      ),
+    );
+  }
+
+  Future<PaginatedResponse<Book>> books({
+    int page = 1,
+    int perPage = 12,
+    String? genero,
+  }) {
+    final query = {
+      'page': '$page',
+      'per_page': '$perPage',
+      if (genero != null && genero.isNotEmpty) 'genero': genero,
+    };
+    return _api.get(
+      '/reader/books',
+      query: query,
+      parser: (data) => PaginatedResponse.fromJson(
+        data as Map<String, dynamic>,
+        Book.fromJson,
+      ),
+    );
+  }
+
+  Future<BookDetails> bookDetails(int id) {
+    return _api.get(
+      '/reader/books/$id',
+      parser: (data) => BookDetails.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<PaginatedResponse<RecommendedBook>> recommendations({
+    int page = 1,
+    int perPage = 6,
+  }) {
+    return _api.get(
+      '/reader/recommendations',
+      query: {'page': '$page', 'per_page': '$perPage'},
+      parser: (data) => PaginatedResponse.fromJson(
+        data as Map<String, dynamic>,
+        RecommendedBook.fromJson,
+      ),
+    );
+  }
+
+  Future<PaginatedResponse<Conversation>> conversations({
+    int page = 1,
+    int perPage = 15,
+  }) {
+    return _api.get(
+      '/reader/conversations',
+      query: {'page': '$page', 'per_page': '$perPage'},
+      parser: (data) => PaginatedResponse.fromJson(
+        data as Map<String, dynamic>,
+        Conversation.fromJson,
+      ),
+    );
+  }
+
+  Future<List<DirectMessage>> messagesWith(int userId, {int afterId = 0}) {
+    return _api.get(
+      '/reader/users/$userId/messages',
+      query: {'after_id': '$afterId'},
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(DirectMessage.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<void> sendMessage(int userId, String conteudo) async {
+    await _api.post(
+      '/reader/users/$userId/messages',
+      body: {'conteudo': conteudo},
+    );
+  }
+
+  Future<PublicUser> publicUser(int id) {
+    return _api.get(
+      '/reader/users/$id',
+      parser: (data) => PublicUser.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<List<Book>> editorBooks(int editorId) {
+    return _api.get(
+      '/reader/editors/$editorId/books',
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(Book.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<void> registerReading({
+    required int livroId,
+    required String status,
+    int? nota,
+    String? comentario,
+  }) async {
+    await _api.post(
+      '/reader/readings',
+      body: {
+        'livro_id': livroId,
+        'status': status,
+        if (nota != null) 'nota': nota,
+        if (comentario != null && comentario.isNotEmpty) 'comentario': comentario,
+      },
+    );
+  }
+}

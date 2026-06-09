@@ -503,6 +503,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                   child: TextFormField(
                                     controller: _titulo,
                                     textCapitalization: TextCapitalization.sentences,
+                                    textInputAction: TextInputAction.next,
                                     decoration: const InputDecoration(
                                       hintText: 'ex: O Alienista',
                                       prefixIcon: Icon(Icons.title_rounded),
@@ -517,6 +518,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                   child: TextFormField(
                                     controller: _autor,
                                     textCapitalization: TextCapitalization.words,
+                                    textInputAction: TextInputAction.next,
                                     decoration: const InputDecoration(
                                       hintText: 'Nome do autor',
                                       prefixIcon: Icon(Icons.person_outline_rounded),
@@ -603,6 +605,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                           keyboardType: const TextInputType.numberWithOptions(
                                             decimal: true,
                                           ),
+                                          textInputAction: TextInputAction.next,
                                           inputFormatters: [
                                             FilteringTextInputFormatter.allow(
                                               RegExp(r'[\d.,]'),
@@ -625,6 +628,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                         child: TextFormField(
                                           controller: _estoque,
                                           keyboardType: TextInputType.number,
+                                          textInputAction: TextInputAction.next,
                                           inputFormatters: [
                                             FilteringTextInputFormatter.digitsOnly,
                                           ],
@@ -653,6 +657,8 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                   maxLines: 5,
                                   minLines: 4,
                                   textCapitalization: TextCapitalization.sentences,
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) => _save(),
                                   decoration: const InputDecoration(
                                     hintText: 'Breve resumo da obra para o catálogo…',
                                     alignLabelWithHint: true,

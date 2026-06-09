@@ -146,14 +146,16 @@ class BookDetails extends Book {
 }
 
 class MyReadingStatus {
-  MyReadingStatus({required this.status, this.nota, this.comentario});
+  MyReadingStatus({required this.id, required this.status, this.nota, this.comentario});
 
+  final int id;
   final String status;
   final int? nota;
   final String? comentario;
 
   factory MyReadingStatus.fromJson(Map<String, dynamic> json) =>
       MyReadingStatus(
+        id: json['id'] as int? ?? 0,
         status: json['status'] as String? ?? 'lendo',
         nota: json['nota'] as int?,
         comentario: json['comentario'] as String?,
@@ -276,6 +278,7 @@ class ReadingItem {
 class BookReview {
   BookReview({
     required this.id,
+    required this.leitorId,
     required this.leitorNome,
     this.leitorImagemUrl,
     this.nota,
@@ -284,6 +287,7 @@ class BookReview {
   });
 
   final int id;
+  final int leitorId;
   final String leitorNome;
   final String? leitorImagemUrl;
   final int? nota;
@@ -292,6 +296,7 @@ class BookReview {
 
   factory BookReview.fromJson(Map<String, dynamic> json) => BookReview(
         id: json['id'] as int,
+        leitorId: json['leitor_id'] as int? ?? 0,
         leitorNome: json['leitor_nome'] as String? ?? '',
         leitorImagemUrl: json['leitor_imagem_url'] as String?,
         nota: json['nota'] as int?,

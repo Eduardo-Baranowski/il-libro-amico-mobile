@@ -21,22 +21,64 @@ import '../features/profile/account_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/shelves/shelves_screen.dart';
 import '../features/shell/main_shell.dart';
+import '../core/storage/onboarding_storage.dart';
+import '../features/onboarding/onboarding_screen.dart';
+import '../features/splash/splash_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+final onboardingStorageProvider = Provider<OnboardingStorage>((ref) => OnboardingStorage());
+
+// null = ainda carregando, false = não completou, true = completou
+final onboardingCompletedProvider = StateNotifierProvider<OnboardingStateNotifier, bool?>((ref) {
+  return OnboardingStateNotifier(ref.watch(onboardingStorageProvider));
+});
+
+class OnboardingStateNotifier extends StateNotifier<bool?> {
+  OnboardingStateNotifier(this._storage) : super(null) {
+    _restore();
+  }
+  final OnboardingStorage _storage;
+
+  Future<void> _restore() async {
+    state = await _storage.hasCompletedOnboarding();
+  }
+
+  Future<void> completeOnboarding() async {
+    await _storage.setOnboardingCompleted(true);
+    state = true;
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
+  final onboardingCompleted = ref.watch(onboardingCompletedProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
-    refreshListenable: _AuthListenable(ref),
+    initialLocation: '/splash',
+    refreshListenable: _RouterListenable(ref),
     redirect: (context, state) {
       final path = state.uri.path;
       final isAuthRoute = path == '/entrar' || path == '/cadastro';
       final needsAuth = path.startsWith('/mensagens') ||
           path.startsWith('/admin') ||
           path.startsWith('/editor/');
+
+      // Splash screen lida com a própria navegação após terminar a animação
+      if (path == '/splash') return null;
+
+      // Aguarda o carregamento do estado de onboarding (null = ainda inicializando)
+      if (onboardingCompleted == null) return null;
+
+      // Se o onboarding não foi completado, mostra sempre (independente de auth)
+      if (onboardingCompleted == false && path != '/boas-vindas') {
+        return '/boas-vindas';
+      }
+      // Quando onboarding já concluído, sai do /boas-vindas
+      if (onboardingCompleted == true && path == '/boas-vindas') {
+        return auth.isAuthenticated ? '/' : '/entrar';
+      }
 
       if (needsAuth && !auth.isAuthenticated) {
         return '/entrar';
@@ -106,6 +148,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/splash',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/boas-vindas',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
         path: '/entrar',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const LoginScreen(),
@@ -169,9 +221,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class _AuthListenable extends ChangeNotifier {
-  _AuthListenable(this._ref) {
+class _RouterListenable extends ChangeNotifier {
+  _RouterListenable(this._ref) {
     _ref.listen(authProvider, (_, __) => notifyListeners());
+    _ref.listen(onboardingCompletedProvider, (_, __) => notifyListeners());
   }
 
   final Ref _ref;

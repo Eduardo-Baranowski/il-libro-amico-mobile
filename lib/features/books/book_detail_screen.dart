@@ -28,11 +28,18 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   String _status = 'lendo';
   int? _nota;
   bool _purchasing = false;
+  final _comentario = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _comentario.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -46,6 +53,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         _book = book;
         _status = book.myReading?.status ?? 'lendo';
         _nota = book.myReading?.nota;
+        _comentario.text = book.myReading?.comentario ?? '';
       });
       _loadReviews();
     } on ApiException catch (e) {
@@ -82,11 +90,52 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             livroId: widget.bookId,
             status: _status,
             nota: _nota,
+            comentario: _comentario.text.trim().isEmpty ? null : _comentario.text.trim(),
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Leitura salva!')),
         );
+        _load();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
+  Future<void> _deleteReading() async {
+    final myReading = _book?.myReading;
+    if (myReading == null) return;
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remover leitura'),
+        content: const Text('Tem certeza que deseja remover este livro da sua estante? Sua resenha também será excluída.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ref.read(readerRepositoryProvider).deleteReading(myReading.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Leitura removida!')),
+        );
+        _comentario.clear();
         _load();
       }
     } on ApiException catch (e) {
@@ -195,11 +244,20 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 auth: auth,
                 status: _status,
                 nota: _nota,
+                comentarioController: _comentario,
                 onStatusChanged: (v) => setState(() => _status = v),
                 onNotaChanged: (v) => setState(() => _nota = v),
                 onSaveReading: _saveReading,
+                onDeleteReading: _deleteReading,
               ),
-              _ReviewsTab(reviews: _reviews, loading: _loadingReviews),
+              _ReviewsTab(
+                reviews: _reviews,
+                loading: _loadingReviews,
+                currentUserId: auth.userId,
+                onEditTap: (tabContext) {
+                  DefaultTabController.of(tabContext).animateTo(0);
+                },
+              ),
               _PurchaseTab(book: book, purchasing: _purchasing, onPurchase: _purchase),
             ],
           ),
@@ -235,18 +293,22 @@ class _AboutTab extends StatelessWidget {
     required this.auth,
     required this.status,
     required this.nota,
+    required this.comentarioController,
     required this.onStatusChanged,
     required this.onNotaChanged,
     required this.onSaveReading,
+    required this.onDeleteReading,
   });
 
   final BookDetails book;
   final AuthState auth;
   final String status;
   final int? nota;
+  final TextEditingController comentarioController;
   final ValueChanged<String> onStatusChanged;
   final ValueChanged<int?> onNotaChanged;
   final VoidCallback onSaveReading;
+  final VoidCallback onDeleteReading;
 
   @override
   Widget build(BuildContext context) {
@@ -296,8 +358,40 @@ class _AboutTab extends StatelessWidget {
                   ],
                   onChanged: onNotaChanged,
                 ),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: onSaveReading, child: const Text('Salvar na estante')),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: comentarioController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Comentário / Resenha (opcional)',
+                    hintText: 'O que achou do livro?',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    if (book.myReading != null) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: onDeleteReading,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.error,
+                            side: const BorderSide(color: AppTheme.error),
+                          ),
+                          child: const Text('Remover'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed: onSaveReading,
+                        child: const Text('Salvar na estante'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -308,10 +402,17 @@ class _AboutTab extends StatelessWidget {
 }
 
 class _ReviewsTab extends StatelessWidget {
-  const _ReviewsTab({required this.reviews, required this.loading});
+  const _ReviewsTab({
+    required this.reviews,
+    required this.loading,
+    required this.currentUserId,
+    required this.onEditTap,
+  });
 
   final List<BookReview> reviews;
   final bool loading;
+  final int? currentUserId;
+  final ValueChanged<BuildContext> onEditTap;
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +431,7 @@ class _ReviewsTab extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, i) {
         final r = reviews[i];
+        final isMine = currentUserId != null && r.leitorId == currentUserId;
         return BibCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,6 +441,11 @@ class _ReviewsTab extends StatelessWidget {
                   UserAvatar(url: r.leitorImagemUrl, name: r.leitorNome, radius: 18),
                   const SizedBox(width: 10),
                   Expanded(child: Text(r.leitorNome, style: AppTheme.labelSans)),
+                  if (isMine)
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: AppTheme.primary),
+                      onPressed: () => onEditTap(context),
+                    ),
                 ],
               ),
               if (r.nota != null) ...[

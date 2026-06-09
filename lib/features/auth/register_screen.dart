@@ -61,6 +61,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               TextFormField(
                 controller: _nome,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Nome'),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o nome' : null,
@@ -69,6 +70,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (v) =>
                     v == null || !v.contains('@') ? 'Email inválido' : null,
@@ -77,6 +79,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _senha,
                 obscureText: true,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 decoration: const InputDecoration(labelText: 'Senha'),
                 validator: (v) => v == null || v.length < 6
                     ? 'Mínimo 6 caracteres'

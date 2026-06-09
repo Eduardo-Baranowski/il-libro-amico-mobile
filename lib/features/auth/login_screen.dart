@@ -59,6 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               TextFormField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (v) =>
                     v == null || !v.contains('@') ? 'Email inválido' : null,
@@ -67,6 +68,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               TextFormField(
                 controller: _senha,
                 obscureText: true,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 decoration: const InputDecoration(labelText: 'Senha'),
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Informe a senha' : null,

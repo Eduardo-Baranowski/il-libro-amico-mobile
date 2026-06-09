@@ -25,6 +25,13 @@ const _generos = [
   'Infantil',
 ];
 
+const _condicoes = [
+  ('novo', 'Como novo'),
+  ('usado', 'Usado'),
+  ('raro', 'Raro'),
+  ('autografado', 'Autografado'),
+];
+
 class EditorBookFormScreen extends ConsumerStatefulWidget {
   const EditorBookFormScreen({super.key, this.book});
 
@@ -44,6 +51,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
   late final TextEditingController _estoque;
   late final TextEditingController _descricao;
   String _genero = 'Romance';
+  String _condicao = 'novo';
   bool _saving = false;
 
   final _lookupController = TextEditingController();
@@ -65,6 +73,10 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     _descricao = TextEditingController(text: b?.descricao ?? '');
     if (b?.genero != null && b!.genero!.isNotEmpty) {
       _genero = _generos.contains(b.genero) ? b.genero! : 'Romance';
+    }
+    if (b?.condicao != null && b!.condicao!.isNotEmpty) {
+      final match = _condicoes.where((c) => c.$1 == b.condicao).map((c) => c.$1);
+      if (match.isNotEmpty) _condicao = match.first;
     }
     _coverPreviewUrl = b?.imagemUrl;
     for (final c in [_titulo, _autor, _preco, _estoque, _descricao]) {
@@ -168,6 +180,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           estoque: _estoque.text.trim(),
           genero: _genero,
           descricao: _descricao.text.trim(),
+          condicao: _condicao,
         );
       } else {
         await repo.createBook(
@@ -178,6 +191,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           genero: _genero,
           descricao: _descricao.text.trim().isEmpty ? null : _descricao.text.trim(),
           openLibraryCoverId: _openLibraryCoverId,
+          condicao: _condicao,
         );
       }
       if (mounted) context.pop(true);
@@ -538,6 +552,36 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                             : Colors.black.withValues(alpha: 0.08),
                                       ),
                                       onSelected: (_) => setState(() => _genero = g),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _FormSection(
+                              title: 'Condição',
+                              icon: Icons.verified_outlined,
+                              children: [
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: _condicoes.map((c) {
+                                    final selected = _condicao == c.$1;
+                                    return FilterChip(
+                                      label: Text(c.$2),
+                                      selected: selected,
+                                      showCheckmark: false,
+                                      selectedColor: AppTheme.primarySoft,
+                                      labelStyle: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: selected ? AppTheme.primary : AppTheme.muted,
+                                      ),
+                                      side: BorderSide(
+                                        color: selected
+                                            ? AppTheme.primary.withValues(alpha: 0.4)
+                                            : Colors.black.withValues(alpha: 0.08),
+                                      ),
+                                      onSelected: (_) => setState(() => _condicao = c.$1),
                                     );
                                   }).toList(),
                                 ),

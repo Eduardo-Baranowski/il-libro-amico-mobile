@@ -5,9 +5,10 @@ import '../theme/app_theme.dart';
 
 /// Barra superior fixa estilo Stitch (título Bibliotheca + busca).
 class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
-  const BibTopBar({super.key, this.showSearch = true});
+  const BibTopBar({super.key, this.showSearch = true, this.onSearch});
 
   final bool showSearch;
+  final VoidCallback? onSearch;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -30,7 +31,7 @@ class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
                 const Spacer(),
                 if (showSearch)
                   IconButton(
-                    onPressed: () => context.go('/buscar'),
+                    onPressed: onSearch ?? () => context.push('/buscar'),
                     icon: const Icon(Icons.search_rounded, color: AppTheme.primary),
                     tooltip: 'Buscar',
                   ),

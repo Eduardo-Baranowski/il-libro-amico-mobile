@@ -79,7 +79,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ? <SearchEditorHit>[]
         : result?.editors ?? [];
 
-    return Column(
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: const BibDetailAppBar(title: 'Buscar'),
+      body: Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 8, AppTheme.marginMobile, 0),
@@ -168,6 +171,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
           ),
       ],
+    ),
     );
   }
 

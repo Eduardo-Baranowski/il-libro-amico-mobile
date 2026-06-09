@@ -90,9 +90,8 @@ class AccountScreen extends ConsumerWidget {
             if (auth.role == UserRole.leitor)
               _MenuTile(
                 icon: Icons.library_books_outlined,
-                title: 'Minhas leituras',
-                subtitle: 'Em breve no app',
-                onTap: () {},
+                title: 'Minha estante',
+                onTap: () => context.go('/estante'),
               ),
           ],
         ),

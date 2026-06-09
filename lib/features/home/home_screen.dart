@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/auth/auth_notifier.dart';
 import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
@@ -124,6 +126,142 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _ => status,
       };
 
+  Future<void> _toggleLike(int index) async {
+    if (!ref.read(authProvider).isAuthenticated) {
+      if (mounted) context.push('/entrar');
+      return;
+    }
+    final item = _items[index];
+    try {
+      final res = await ref.read(readerRepositoryProvider).toggleFeedLike(item.id);
+      setState(() {
+        _items[index] = item.copyWith(likedByMe: res.liked, likesCount: res.likesCount);
+      });
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
+  Future<void> _openComments(int index) async {
+    final item = _items[index];
+    final controller = TextEditingController();
+    List<FeedComment> comments = [];
+    try {
+      comments = await ref.read(readerRepositoryProvider).feedComments(item.id);
+    } catch (_) {}
+
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surfaceWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.55,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text('Comentários', style: AppTheme.headlineSerif.copyWith(fontSize: 20)),
+                    ),
+                    Expanded(
+                      child: comments.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Nenhum comentário ainda.',
+                                style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: comments.length,
+                              itemBuilder: (_, i) {
+                                final c = comments[i];
+                                return ListTile(
+                                  leading: UserAvatar(url: c.userImagemUrl, name: c.userNome, radius: 18),
+                                  title: Text(c.userNome, style: AppTheme.labelSans),
+                                  subtitle: Text(c.conteudo),
+                                );
+                              },
+                            ),
+                    ),
+                    if (ref.read(authProvider).isAuthenticated)
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: controller,
+                                decoration: const InputDecoration(hintText: 'Escreva um comentário…'),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.send_rounded, color: AppTheme.primary),
+                              onPressed: () async {
+                                final text = controller.text.trim();
+                                if (text.isEmpty) return;
+                                try {
+                                  final count = await ref
+                                      .read(readerRepositoryProvider)
+                                      .addFeedComment(item.id, text);
+                                  controller.clear();
+                                  comments = await ref
+                                      .read(readerRepositoryProvider)
+                                      .feedComments(item.id);
+                                  setState(() {
+                                    _items[index] = item.copyWith(commentsCount: count);
+                                  });
+                                  setModalState(() {});
+                                } on ApiException catch (e) {
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(content: Text(e.message)),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.push('/entrar');
+                          },
+                          child: const Text('Entre para comentar'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    controller.dispose();
+  }
+
+  void _shareItem(FeedItem item) {
+    Share.share(
+      '${item.leitorNome} ${ _statusVerb(item.status)} "${item.livroTitulo}" — Bibliotheca',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -151,7 +289,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onAction: () => context.go('/livros'),
                     ),
                     SizedBox(
-                      height: 220,
+                      height: 268,
                       child: _loadingHighlights && _highlights.isEmpty
                           ? const Center(child: CircularProgressIndicator())
                           : ListView.separated(
@@ -163,7 +301,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 return GestureDetector(
                                   onTap: () => context.push('/livro/${b.id}'),
                                   child: SizedBox(
-                                    width: 130,
+                                    width: 128,
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -180,8 +318,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             clipBehavior: Clip.antiAlias,
                                             child: BookCover(
                                               url: b.imagemUrl,
-                                              width: 130,
-                                              height: 195,
+                                              width: 128,
+                                              height: 192,
                                               borderRadius: 8,
                                             ),
                                           ),
@@ -189,11 +327,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         const SizedBox(height: 8),
                                         Text(
                                           b.titulo,
-                                          maxLines: 1,
+                                          maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: AppTheme.titleSerif.copyWith(fontSize: 15),
+                                          style: AppTheme.titleSerif.copyWith(fontSize: 14, height: 1.2),
                                         ),
-                                        BibPriceText(b.preco),
+                                        const SizedBox(height: 4),
+                                        BibPriceText(b.preco, style: AppTheme.titleSerif.copyWith(fontSize: 14)),
                                       ],
                                     ),
                                   ),
@@ -244,6 +383,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       statusTone: _statusTone(_items[index].status),
                       statusVerb: _statusVerb(_items[index].status),
                       onTap: () => context.push('/livro/${_items[index].livroId}'),
+                      onLike: () => _toggleLike(index),
+                      onComment: () => _openComments(index),
+                      onShare: () => _shareItem(_items[index]),
                     ),
                   ),
                   childCount: _items.length,
@@ -270,6 +412,9 @@ class _FeedCard extends StatelessWidget {
     required this.statusTone,
     required this.statusVerb,
     required this.onTap,
+    required this.onLike,
+    required this.onComment,
+    required this.onShare,
   });
 
   final FeedItem item;
@@ -277,6 +422,9 @@ class _FeedCard extends StatelessWidget {
   final BibChipTone statusTone;
   final String statusVerb;
   final VoidCallback onTap;
+  final VoidCallback onLike;
+  final VoidCallback onComment;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -365,6 +513,60 @@ class _FeedCard extends StatelessWidget {
                 ),
               ],
             ),
+            const Divider(height: 24),
+            Row(
+              children: [
+                _FeedAction(
+                  icon: item.likedByMe ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  label: '${item.likesCount}',
+                  active: item.likedByMe,
+                  onTap: onLike,
+                ),
+                const SizedBox(width: 16),
+                _FeedAction(
+                  icon: Icons.mode_comment_outlined,
+                  label: '${item.commentsCount}',
+                  onTap: onComment,
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.share_outlined, color: AppTheme.onSurfaceVariant),
+                  onPressed: onShare,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedAction extends StatelessWidget {
+  const _FeedAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppTheme.radiusMd,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: active ? AppTheme.primary : AppTheme.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(label, style: AppTheme.captionSans.copyWith(fontWeight: FontWeight.w700)),
           ],
         ),
       ),

@@ -24,15 +24,47 @@ class ReaderRepository {
     );
   }
 
+  Future<({bool liked, int likesCount})> toggleFeedLike(int readingId) async {
+    final res = await _api.post<Map<String, dynamic>>(
+      '/reader/feed/$readingId/like',
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return (
+      liked: res['liked'] as bool? ?? false,
+      likesCount: res['likes_count'] as int? ?? 0,
+    );
+  }
+
+  Future<List<FeedComment>> feedComments(int readingId) {
+    return _api.get(
+      '/reader/feed/$readingId/comments',
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(FeedComment.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<int> addFeedComment(int readingId, String conteudo) async {
+    final res = await _api.post<Map<String, dynamic>>(
+      '/reader/feed/$readingId/comments',
+      body: {'conteudo': conteudo},
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return res['comments_count'] as int? ?? 0;
+  }
+
   Future<PaginatedResponse<Book>> books({
     int page = 1,
     int perPage = 12,
     String? genero,
+    String? condicao,
   }) {
     final query = {
       'page': '$page',
       'per_page': '$perPage',
       if (genero != null && genero.isNotEmpty) 'genero': genero,
+      if (condicao != null && condicao.isNotEmpty) 'condicao': condicao,
     };
     return _api.get(
       '/reader/books',
@@ -48,6 +80,42 @@ class ReaderRepository {
     return _api.get(
       '/reader/books/$id',
       parser: (data) => BookDetails.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<List<BookReview>> bookReviews(int id) {
+    return _api.get(
+      '/reader/books/$id/reviews',
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(BookReview.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<void> purchaseBook(int livroId, {int quantidade = 1}) async {
+    await _api.post(
+      '/reader/purchases',
+      body: {'livro_id': livroId, 'quantidade': quantidade},
+    );
+  }
+
+  Future<PaginatedResponse<ReadingItem>> readings({
+    int page = 1,
+    int perPage = 12,
+    String? status,
+  }) {
+    return _api.get(
+      '/reader/readings',
+      query: {
+        'page': '$page',
+        'per_page': '$perPage',
+        if (status != null && status.isNotEmpty) 'status': status,
+      },
+      parser: (data) => PaginatedResponse.fromJson(
+        data as Map<String, dynamic>,
+        ReadingItem.fromJson,
+      ),
     );
   }
 
@@ -129,5 +197,9 @@ class ReaderRepository {
         if (comentario != null && comentario.isNotEmpty) 'comentario': comentario,
       },
     );
+  }
+
+  Future<void> deleteReading(int id) async {
+    await _api.delete('/reader/readings/$id');
   }
 }

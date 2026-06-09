@@ -12,14 +12,11 @@ import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
 import '../editor/editor_catalog_body.dart';
 
-const _genreFilters = [
-  'Todos',
-  'Romance',
-  'Mistério',
-  'Ficção Científica',
-  'Fantasia',
-  'História',
-  'Biografia',
+const _marketFilters = [
+  ('Todos', null),
+  ('Usado', 'usado'),
+  ('Raro', 'raro'),
+  ('Autografado', 'autografado'),
 ];
 
 class BooksScreen extends ConsumerStatefulWidget {
@@ -37,7 +34,7 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   String? _error;
-  String _genero = 'Todos';
+  String? _condicao;
 
   bool get _hasMore => _page < _pages;
 
@@ -76,7 +73,7 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
     try {
       final res = await ref.read(readerRepositoryProvider).books(
             page: page,
-            genero: _genero == 'Todos' ? null : _genero,
+            condicao: _condicao,
           );
       if (!mounted) return;
       setState(() {
@@ -101,9 +98,9 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
     }
   }
 
-  void _onGenero(String g) {
-    if (_genero == g) return;
-    setState(() => _genero = g);
+  void _onFilter(String? condicao) {
+    if (_condicao == condicao) return;
+    setState(() => _condicao = condicao);
     _load(1);
   }
 
@@ -138,13 +135,13 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: _genreFilters.map((g) {
+                      children: _marketFilters.map((f) {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: BibGenreChip(
-                            label: g,
-                            selected: _genero == g,
-                            onTap: () => _onGenero(g),
+                            label: f.$1,
+                            selected: _condicao == f.$2,
+                            onTap: () => _onFilter(f.$2),
                           ),
                         );
                       }).toList(),
@@ -225,19 +222,33 @@ class _MarketBookCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                  child: book.imagemUrl != null && book.imagemUrl!.isNotEmpty
-                      ? BookCover(url: book.imagemUrl, width: 200, height: 400, borderRadius: 0)
-                      : const ColoredBox(
-                          color: AppTheme.primarySoft,
-                          child: Center(
-                            child: Icon(Icons.menu_book_rounded, color: AppTheme.primary, size: 40),
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    child: book.imagemUrl != null && book.imagemUrl!.isNotEmpty
+                        ? BookCover(url: book.imagemUrl, width: 200, height: 400, borderRadius: 0)
+                        : const ColoredBox(
+                            color: AppTheme.primarySoft,
+                            child: Center(
+                              child: Icon(Icons.menu_book_rounded, color: AppTheme.primary, size: 40),
+                            ),
                           ),
-                        ),
-                ),
+                  ),
+                  if (book.condicao == 'raro' || book.condicao == 'autografado')
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: BibStatusChip(
+                        label: book.condicao == 'raro' ? 'Raro' : 'Signed',
+                        tone: book.condicao == 'raro' ? BibChipTone.terracotta : BibChipTone.sage,
+                      ),
+                    ),
+                ],
               ),
+            ),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(

@@ -105,6 +105,7 @@ class EditorBook {
     this.genero,
     this.descricao,
     this.imagemUrl,
+    this.condicao,
   });
 
   final int id;
@@ -115,6 +116,7 @@ class EditorBook {
   final String? genero;
   final String? descricao;
   final String? imagemUrl;
+  final String? condicao;
 
   factory EditorBook.fromJson(Map<String, dynamic> json) => EditorBook(
         id: json['id'] as int,
@@ -125,6 +127,7 @@ class EditorBook {
         genero: json['genero'] as String?,
         descricao: json['descricao'] as String?,
         imagemUrl: json['imagem_url'] as String?,
+        condicao: json['condicao'] as String? ?? 'novo',
       );
 }
 

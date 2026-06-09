@@ -19,6 +19,7 @@ import '../features/messages/chat_screen.dart';
 import '../features/messages/conversations_screen.dart';
 import '../features/profile/account_screen.dart';
 import '../features/search/search_screen.dart';
+import '../features/shelves/shelves_screen.dart';
 import '../features/shell/main_shell.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -76,8 +77,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/buscar',
-                builder: (context, state) => const SearchScreen(),
+                path: '/estante',
+                builder: (context, state) => const ShelvesScreen(),
               ),
             ],
           ),
@@ -90,6 +91,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/buscar',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: '/livro/:id',

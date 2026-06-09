@@ -71,6 +71,7 @@ class Book {
     this.descricao,
     this.imagemUrl,
     this.statusEstoque,
+    this.condicao,
   });
 
   final int id;
@@ -84,6 +85,7 @@ class Book {
   final String? descricao;
   final String? imagemUrl;
   final String? statusEstoque;
+  final String? condicao;
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
         id: json['id'] as int,
@@ -97,6 +99,7 @@ class Book {
         descricao: json['descricao'] as String?,
         imagemUrl: json['imagem_url'] as String?,
         statusEstoque: json['status_estoque'] as String?,
+        condicao: json['condicao'] as String? ?? 'novo',
       );
 }
 
@@ -170,6 +173,9 @@ class FeedItem {
     this.nota,
     this.comentario,
     this.criadoEm,
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.likedByMe = false,
   });
 
   final int id;
@@ -183,6 +189,31 @@ class FeedItem {
   final int? nota;
   final String? comentario;
   final String? criadoEm;
+  final int likesCount;
+  final int commentsCount;
+  final bool likedByMe;
+
+  FeedItem copyWith({
+    int? likesCount,
+    int? commentsCount,
+    bool? likedByMe,
+  }) =>
+      FeedItem(
+        id: id,
+        leitorNome: leitorNome,
+        leitorImagemUrl: leitorImagemUrl,
+        livroTitulo: livroTitulo,
+        livroAutor: livroAutor,
+        livroImagemUrl: livroImagemUrl,
+        livroId: livroId,
+        status: status,
+        nota: nota,
+        comentario: comentario,
+        criadoEm: criadoEm,
+        likesCount: likesCount ?? this.likesCount,
+        commentsCount: commentsCount ?? this.commentsCount,
+        likedByMe: likedByMe ?? this.likedByMe,
+      );
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     final leitor = json['leitor'] as Map<String, dynamic>? ?? {};
@@ -199,8 +230,98 @@ class FeedItem {
       nota: json['nota'] as int?,
       comentario: json['comentario'] as String?,
       criadoEm: json['criado_em'] as String?,
+      likesCount: json['likes_count'] as int? ?? 0,
+      commentsCount: json['comments_count'] as int? ?? 0,
+      likedByMe: json['liked_by_me'] as bool? ?? false,
     );
   }
+}
+
+class ReadingItem {
+  ReadingItem({
+    required this.id,
+    required this.livroId,
+    required this.titulo,
+    required this.autor,
+    this.imagemUrl,
+    required this.status,
+    this.nota,
+    this.comentario,
+  });
+
+  final int id;
+  final int livroId;
+  final String titulo;
+  final String autor;
+  final String? imagemUrl;
+  final String status;
+  final int? nota;
+  final String? comentario;
+
+  factory ReadingItem.fromJson(Map<String, dynamic> json) {
+    final livro = json['livro'] as Map<String, dynamic>? ?? {};
+    return ReadingItem(
+      id: json['id'] as int,
+      livroId: livro['id'] as int? ?? 0,
+      titulo: livro['titulo'] as String? ?? '',
+      autor: livro['autor'] as String? ?? '',
+      imagemUrl: livro['imagem_url'] as String?,
+      status: json['status'] as String? ?? '',
+      nota: json['nota'] as int?,
+      comentario: json['comentario'] as String?,
+    );
+  }
+}
+
+class BookReview {
+  BookReview({
+    required this.id,
+    required this.leitorNome,
+    this.leitorImagemUrl,
+    this.nota,
+    this.comentario,
+    required this.status,
+  });
+
+  final int id;
+  final String leitorNome;
+  final String? leitorImagemUrl;
+  final int? nota;
+  final String? comentario;
+  final String status;
+
+  factory BookReview.fromJson(Map<String, dynamic> json) => BookReview(
+        id: json['id'] as int,
+        leitorNome: json['leitor_nome'] as String? ?? '',
+        leitorImagemUrl: json['leitor_imagem_url'] as String?,
+        nota: json['nota'] as int?,
+        comentario: json['comentario'] as String?,
+        status: json['status'] as String? ?? '',
+      );
+}
+
+class FeedComment {
+  FeedComment({
+    required this.id,
+    required this.userNome,
+    this.userImagemUrl,
+    required this.conteudo,
+    this.criadoEm,
+  });
+
+  final int id;
+  final String userNome;
+  final String? userImagemUrl;
+  final String conteudo;
+  final String? criadoEm;
+
+  factory FeedComment.fromJson(Map<String, dynamic> json) => FeedComment(
+        id: json['id'] as int,
+        userNome: json['user_nome'] as String? ?? '',
+        userImagemUrl: json['user_imagem_url'] as String?,
+        conteudo: json['conteudo'] as String? ?? '',
+        criadoEm: json['criado_em'] as String?,
+      );
 }
 
 class RecommendedBook {

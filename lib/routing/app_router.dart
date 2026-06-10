@@ -24,6 +24,7 @@ import '../features/shell/main_shell.dart';
 import '../core/storage/onboarding_storage.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/splash/splash_screen.dart';
+import '../features/splash/welcome_quote_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -51,14 +52,13 @@ class OnboardingStateNotifier extends StateNotifier<bool?> {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authProvider);
-  final onboardingCompleted = ref.watch(onboardingCompletedProvider);
-
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: _RouterListenable(ref),
     redirect: (context, state) {
+      final auth = ref.read(authProvider);
+      final onboardingCompleted = ref.read(onboardingCompletedProvider);
       final path = state.uri.path;
       final isAuthRoute = path == '/entrar' || path == '/cadastro';
       final needsAuth = path.startsWith('/mensagens') ||
@@ -77,7 +77,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       // Quando onboarding já concluído, sai do /boas-vindas
       if (onboardingCompleted == true && path == '/boas-vindas') {
-        return auth.isAuthenticated ? '/' : '/entrar';
+        return '/';
       }
 
       if (needsAuth && !auth.isAuthenticated) {
@@ -151,6 +151,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/splash',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/welcome-quote',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const WelcomeQuoteScreen(),
       ),
       GoRoute(
         path: '/boas-vindas',

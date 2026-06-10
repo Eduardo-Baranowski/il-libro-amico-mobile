@@ -63,10 +63,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> with Single
       backgroundColor: AppTheme.background,
       body: Stack(
         children: [
-          // 1. Ambient Glow Backdrops
-          _buildBackgroundGlows(),
-
-          // 2. Main Page Content
+          // 1. Main Page Content
           SafeArea(
             child: Column(
               children: [
@@ -127,40 +124,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> with Single
     );
   }
 
-  Widget _buildBackgroundGlows() {
-    return Stack(
-      children: [
-        // Decorative glow for Screen 2 (Comunidade)
-        if (_currentPage == 1)
-          Positioned(
-            top: 150,
-            left: 50,
-            right: 50,
-            child: Container(
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondaryContainer.withValues(alpha: 0.25),
-              ),
-            ),
-          ),
-        // Decorative glow for Screen 3 (Marketplace)
-        if (_currentPage == 2)
-          Positioned(
-            top: 100,
-            left: 30,
-            right: 30,
-            child: Container(
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primarySoft.withValues(alpha: 0.2),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+
 
   Widget _buildPageContent(Map<String, String> page, int index) {
     return Padding(

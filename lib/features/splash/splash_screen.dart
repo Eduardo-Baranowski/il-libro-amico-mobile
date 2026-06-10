@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 
@@ -73,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   void _finishLoading() {
     if (!mounted) return;
-    context.go('/');
+    context.go('/welcome-quote');
   }
 
   @override
@@ -110,16 +109,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  'Bibliotheca',
-                  style: GoogleFonts.literata(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 48.0),
                   child: LinearProgressIndicator(

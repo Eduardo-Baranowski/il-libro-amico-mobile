@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,11 @@ import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
+
+final profileDetailsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final repo = ref.watch(readerRepositoryProvider);
+  return repo.profileDetails();
+});
 
 class ShelvesScreen extends ConsumerStatefulWidget {
   const ShelvesScreen({super.key});
@@ -62,6 +68,84 @@ class _ShelvesScreenState extends ConsumerState<ShelvesScreen> {
     _load();
   }
 
+  Widget _buildProfileImage(String? url, String name) {
+    final initial = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+    return Container(
+      width: 112,
+      height: 112,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.surfaceContainer, width: 4),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: url != null && url.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: AppTheme.surfaceLow,
+                  child: const Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary),
+                  ),
+                ),
+                errorWidget: (context, url, error) => _avatarPlaceholder(initial),
+              )
+            : _avatarPlaceholder(initial),
+      ),
+    );
+  }
+
+  Widget _avatarPlaceholder(String initial) {
+    return Container(
+      color: AppTheme.secondaryContainer,
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: AppTheme.onSecondaryContainer,
+          fontWeight: FontWeight.w800,
+          fontSize: 48,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String count, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          count,
+          style: AppTheme.titleSerif.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label.toUpperCase(),
+          style: AppTheme.captionSans.copyWith(
+            fontSize: 10,
+            letterSpacing: 1.1,
+            color: AppTheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      width: 1,
+      height: 32,
+      color: AppTheme.outlineVariant.withValues(alpha: 0.4),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
@@ -88,65 +172,202 @@ class _ShelvesScreenState extends ConsumerState<ShelvesScreen> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 8, AppTheme.marginMobile, 0),
-          child: Text('Minha estante', style: AppTheme.headlineSerif),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.marginMobile, vertical: 12),
-          child: Row(
-            children: [
-              _TabChip(label: 'Lendo', value: 'lendo', selected: _tab == 'lendo', onTap: _switchTab),
-              _TabChip(label: 'Lidos', value: 'lido', selected: _tab == 'lido', onTap: _switchTab),
-              _TabChip(label: 'Quero ler', value: 'quero_ler', selected: _tab == 'quero_ler', onTap: _switchTab),
-            ],
-          ),
-        ),
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-                  ? Center(child: Text(_error!))
-                  : _items.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Nenhum livro nesta prateleira.',
-                            style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+    final profileAsync = ref.watch(profileDetailsProvider);
+
+    return profileAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Erro ao carregar perfil: $err')),
+      data: (profile) {
+        final user = profile['user'] as Map<String, dynamic>;
+        final stats = profile['stats'] as Map<String, dynamic>;
+        final generos = (profile['generos'] as List?)?.cast<String>() ?? [];
+        final name = user['nome'] as String? ?? '';
+        final bio = user['bio'] as String? ?? '';
+        final imageUrl = user['imagem_url'] as String?;
+
+        final lidosCount = stats['lidos'] ?? 0;
+        final vendaCount = stats['venda'] ?? 0;
+        final seguidoresCount = stats['seguidores'] ?? 0;
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(profileDetailsProvider);
+            await _load();
+          },
+          color: AppTheme.primary,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            slivers: [
+              // 1. Profile Header Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 24, AppTheme.marginMobile, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Avatar with Edit Button Stack
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          _buildProfileImage(imageUrl, name),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Material(
+                              elevation: 2,
+                              color: AppTheme.primary,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                onTap: () {
+                                  // Edit avatar action placeholder
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Icon(
+                                    Icons.edit_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _load,
-                          child: GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppTheme.marginMobile,
-                              0,
-                              AppTheme.marginMobile,
-                              24,
-                            ),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: AppTheme.gutterMobile,
-                              crossAxisSpacing: AppTheme.gutterMobile,
-                              childAspectRatio: 0.58,
-                            ),
-                            itemCount: _items.length,
-                            itemBuilder: (context, i) {
-                              final r = _items[i];
-                              return _ShelfCard(
-                                item: r,
-                                showProgress: _tab == 'lendo',
-                                showRating: _tab == 'lido',
-                                onTap: () => context.push('/livro/${r.livroId}'),
-                              );
-                            },
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // User Name
+                      Text(
+                        name,
+                        textAlign: TextAlign.center,
+                        style: AppTheme.displaySerif.copyWith(fontSize: 24),
+                      ),
+                      const SizedBox(height: 6),
+                      // Bio
+                      if (bio.isNotEmpty)
+                        Text(
+                          bio,
+                          textAlign: TextAlign.center,
+                          style: AppTheme.bodySans.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
-        ),
-      ],
+                      const SizedBox(height: 20),
+                      // Stats Row
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.symmetric(
+                            horizontal: BorderSide(
+                              color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildStatItem('$lidosCount', 'Lidos'),
+                            _buildVerticalDivider(),
+                            _buildStatItem('$vendaCount', 'À Venda'),
+                            _buildVerticalDivider(),
+                            _buildStatItem('$seguidoresCount', 'Seguidores'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Favorite Genres Wrap
+                      if (generos.isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: generos.map((g) => Chip(
+                            label: Text(g),
+                            labelStyle: AppTheme.labelSans.copyWith(
+                              fontSize: 12,
+                              color: AppTheme.onSecondaryContainer,
+                            ),
+                            backgroundColor: AppTheme.secondaryContainer,
+                            side: BorderSide.none,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          )).toList(),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              // 2. Tab Bar Section
+              SliverToBoxAdapter(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.marginMobile, vertical: 8),
+                  child: Row(
+                    children: [
+                      _TabChip(label: 'Lendo', value: 'lendo', selected: _tab == 'lendo', onTap: _switchTab),
+                      _TabChip(label: 'Lidos', value: 'lido', selected: _tab == 'lido', onTap: _switchTab),
+                      _TabChip(label: 'Quero ler', value: 'quero_ler', selected: _tab == 'quero_ler', onTap: _switchTab),
+                    ],
+                  ),
+                ),
+              ),
+              // 3. Grid of books
+              if (_loading)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_error != null)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: Text(_error!)),
+                )
+              else if (_items.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      'Nenhum livro nesta prateleira.',
+                      style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.marginMobile,
+                    12,
+                    AppTheme.marginMobile,
+                    40,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: AppTheme.gutterMobile,
+                      crossAxisSpacing: AppTheme.gutterMobile,
+                      childAspectRatio: 0.55,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) {
+                        final r = _items[i];
+                        return _ShelfCard(
+                          item: r,
+                          showProgress: _tab == 'lendo',
+                          showRating: _tab == 'lido',
+                          onTap: () => context.push('/livro/${r.livroId}'),
+                        );
+                      },
+                      childCount: _items.length,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -257,6 +478,11 @@ class _ShelfCard extends StatelessWidget {
                       color: AppTheme.primary,
                       minHeight: 4,
                       borderRadius: BorderRadius.circular(4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '35% lido',
+                      style: AppTheme.captionSans.copyWith(fontSize: 10),
                     ),
                   ],
                 ],

@@ -199,6 +199,20 @@ class ReaderRepository {
     );
   }
 
+  Future<Map<String, dynamic>> profileDetails() {
+    return _api.get(
+      '/reader/profile',
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  Future<Map<String, dynamic>> randomQuote() {
+    return _api.get(
+      '/reader/random-quote',
+      parser: (data) => data as Map<String, dynamic>,
+    );
+  }
+
   Future<void> deleteReading(int id) async {
     await _api.delete('/reader/readings/$id');
   }

@@ -103,6 +103,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  void updateImageUrl(String url) {
+    state = state.copyWith(imageUrl: url);
+    _storage.saveSession(
+      token: state.token!,
+      role: state.role,
+      name: state.name,
+      imageUrl: url,
+    );
+  }
+
   Future<void> logout() async {
     await _storage.clear();
     state = state.copyWith(clearSession: true);

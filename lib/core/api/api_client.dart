@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../../config/api_config.dart';
 import 'api_exception.dart';
@@ -74,8 +75,7 @@ class ApiClient {
     } on http.ClientException catch (e) {
       throw ApiException(
         statusCode: 0,
-        message:
-            'Falha de rede em ${ApiConfig.instance.baseUrl}. (${e.message})',
+        message: 'Falha de rede em ${ApiConfig.instance.baseUrl}. (${e.message})',
       );
     }
   }
@@ -135,10 +135,12 @@ class ApiClient {
     );
   }
 
+  /// Sends a multipart request. Pass [file] to attach a binary file.
   Future<T> sendMultipart<T>(
     String path, {
     required String method,
-    required Map<String, String> fields,
+    Map<String, String>? fields,
+    ({String fieldName, String filePath, String mimeType})? file,
     T Function(dynamic)? parser,
   }) async {
     final token = await getToken();
@@ -147,7 +149,14 @@ class ApiClient {
       request.headers['Authorization'] = 'Bearer $token';
     }
     request.headers['Accept'] = 'application/json';
-    request.fields.addAll(fields);
+    if (fields != null) request.fields.addAll(fields);
+    if (file != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        file.fieldName,
+        file.filePath,
+        contentType: MediaType.parse(file.mimeType),
+      ));
+    }
 
     return _send(
       () async {
@@ -160,15 +169,17 @@ class ApiClient {
 
   Future<T> postMultipart<T>(
     String path, {
-    required Map<String, String> fields,
+    Map<String, String>? fields,
+    ({String fieldName, String filePath, String mimeType})? file,
     T Function(dynamic)? parser,
   }) =>
-      sendMultipart(path, method: 'POST', fields: fields, parser: parser);
+      sendMultipart(path, method: 'POST', fields: fields, file: file, parser: parser);
 
   Future<T> putMultipart<T>(
     String path, {
-    required Map<String, String> fields,
+    Map<String, String>? fields,
+    ({String fieldName, String filePath, String mimeType})? file,
     T Function(dynamic)? parser,
   }) =>
-      sendMultipart(path, method: 'PUT', fields: fields, parser: parser);
+      sendMultipart(path, method: 'PUT', fields: fields, file: file, parser: parser);
 }

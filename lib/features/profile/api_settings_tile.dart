@@ -51,8 +51,8 @@ class _ApiSettingsCardState extends State<ApiSettingsCard> {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Genymotion: http://10.0.3.2:5000 · AVD: http://10.0.2.2:5000\n'
-              'API deve rodar com: python run.py (host 0.0.0.0)',
+              'Padrão: https://lumina-nodejs-api.vercel.app (produção)\n'
+              'Dev local — Genymotion: http://10.0.3.2:5000 | AVD: http://10.0.2.2:5000',
               style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
             const SizedBox(height: 12),
@@ -60,7 +60,7 @@ class _ApiSettingsCardState extends State<ApiSettingsCard> {
               controller: _controller,
               decoration: const InputDecoration(
                 labelText: 'Base URL',
-                hintText: 'http://10.0.3.2:5000',
+                hintText: 'https://lumina-nodejs-api.vercel.app',
               ),
               keyboardType: TextInputType.url,
             ),
@@ -70,7 +70,10 @@ class _ApiSettingsCardState extends State<ApiSettingsCard> {
               runSpacing: 8,
               children: ApiConfig.androidPresets.map((url) {
                 return ActionChip(
-                  label: Text(url.replaceFirst('http://', ''), style: const TextStyle(fontSize: 11)),
+                  label: Text(
+                    url.replaceFirst('https://', '').replaceFirst('http://', ''),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   onPressed: () {
                     _controller.text = url;
                     _save(url);

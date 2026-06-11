@@ -1,20 +1,19 @@
-import 'dart:io';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// URL base da API Flask.
+/// URL base da API.
 ///
-/// Android emulador:
-/// - **Genymotion:** `http://10.0.3.2:5000` (padrão aqui)
-/// - **AVD (Android Studio):** `http://10.0.2.2:5000`
+/// Produção: `https://lumina-nodejs-api.vercel.app` (padrão)
 ///
-/// Sobrescreva em Conta → URL da API, ou:
-/// `flutter run --dart-define=API_BASE_URL=http://SEU_IP:5000`
+/// Para dev local, sobrescreva em Conta → URL da API, ou:
+/// `flutter run --dart-define=API_BASE_URL=http://10.0.3.2:5000`
 class ApiConfig {
   ApiConfig._();
   static final ApiConfig instance = ApiConfig._();
 
   static const _prefsKey = 'api_base_url_override';
+
+  /// URL de produção na Vercel.
+  static const String productionUrl = 'https://lumina-nodejs-api.vercel.app';
 
   String? _override;
 
@@ -30,11 +29,8 @@ class ApiConfig {
     const fromEnv = String.fromEnvironment('API_BASE_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
 
-    if (Platform.isAndroid) {
-      // Genymotion → host via 10.0.3.2 (não use 10.0.2.2 do AVD).
-      return 'http://10.0.3.2:5000';
-    }
-    return 'http://127.0.0.1:5000';
+    // Padrão: API de produção na Vercel.
+    return productionUrl;
   }
 
   Future<void> setOverride(String? url) async {
@@ -49,8 +45,9 @@ class ApiConfig {
     }
   }
 
-  /// IPs comuns para atalho na tela de configuração.
+  /// URLs de atalho na tela de configuração.
   static List<String> get androidPresets => const [
+        productionUrl,
         'http://10.0.3.2:5000',
         'http://10.0.2.2:5000',
         'http://127.0.0.1:5000',

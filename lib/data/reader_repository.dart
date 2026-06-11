@@ -206,6 +206,18 @@ class ReaderRepository {
     );
   }
 
+  /// Uploads a new profile photo. [filePath] is the local file path,
+  /// [mimeType] should be e.g. 'image/jpeg' or 'image/png'.
+  /// Returns the new [imagem_url] from the server.
+  Future<String> uploadProfilePhoto(String filePath, String mimeType) async {
+    final res = await _api.postMultipart<Map<String, dynamic>>(
+      '/reader/profile/photo',
+      file: (fieldName: 'imagem', filePath: filePath, mimeType: mimeType),
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return res['imagem_url'] as String? ?? '';
+  }
+
   Future<Map<String, dynamic>> randomQuote() {
     return _api.get(
       '/reader/random-quote',

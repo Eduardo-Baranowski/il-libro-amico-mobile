@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart';
 import 'api_settings_tile.dart';
+import 'profile_edit_dialog.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -43,18 +44,42 @@ class AccountScreen extends ConsumerWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: AppTheme.radiusXl,
-                  border: Border.all(color: AppTheme.surfaceContainer, width: 4),
-                  boxShadow: AppTheme.cardShadow,
+              GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (context) => const ProfileEditDialog(),
                 ),
-                child: ClipRRect(
-                  borderRadius: AppTheme.radiusXl,
-                  child: SizedBox(
-                    width: 112,
-                    height: 112,
-                    child: UserAvatar(url: auth.imageUrl, name: auth.name ?? '', radius: 56),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: AppTheme.radiusXl,
+                    border: Border.all(color: AppTheme.surfaceContainer, width: 4),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: AppTheme.radiusXl,
+                    child: SizedBox(
+                      width: 112,
+                      height: 112,
+                      child: UserAvatar(url: auth.imageUrl, name: auth.name ?? '', radius: 56),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -4,
+                right: -4,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.surface, width: 3),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
               ),

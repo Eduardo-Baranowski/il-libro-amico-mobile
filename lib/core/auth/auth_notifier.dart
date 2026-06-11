@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
@@ -105,12 +107,64 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   void updateImageUrl(String url) {
     state = state.copyWith(imageUrl: url);
-    _storage.saveSession(
-      token: state.token!,
-      role: state.role,
-      name: state.name,
-      imageUrl: url,
-    );
+    if (state.token != null && state.role != null && state.name != null) {
+      _storage.saveSession(
+        token: state.token!,
+        role: state.role!,
+        name: state.name!,
+        imageUrl: url,
+      );
+    }
+  }
+
+  Future<void> updateProfile({
+    String? name,
+    File? imageFile,
+  }) async {
+    final api = ApiClient(getToken: () async => state.token, onUnauthorized: logout);
+
+    try {
+      // Update profile name if provided
+      if (name != null && name.isNotEmpty) {
+        await api.put(
+          '/reader/profile',
+          body: {'nome': name},
+        );
+      }
+
+      // Upload profile photo if provided
+      if (imageFile != null) {
+        final response = await api.postMultipart<Map<String, dynamic>>(
+          '/reader/profile/photo',
+          file: (
+            fieldName: 'imagem',
+            filePath: imageFile.path,
+            mimeType: 'image/jpeg',
+          ),
+          parser: (d) => d as Map<String, dynamic>,
+        );
+
+        // Update image URL from response
+        if (response.containsKey('imagem_url')) {
+          updateImageUrl(response['imagem_url'] as String);
+        }
+      }
+
+      // Update state with new name if provided
+      if (name != null && name.isNotEmpty) {
+        state = state.copyWith(name: name);
+        if (state.token != null && state.role != null) {
+          _storage.saveSession(
+            token: state.token!,
+            role: state.role!,
+            name: name,
+            imageUrl: state.imageUrl,
+          );
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> logout() async {

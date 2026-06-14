@@ -345,6 +345,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           SliverPadding(
+            padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 8, AppTheme.marginMobile, 8),
+            sliver: SliverToBoxAdapter(
+              child: BibCard(
+                child: InkWell(
+                  borderRadius: AppTheme.radiusXl,
+                  onTap: () => context.push('/clube'),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primarySoft,
+                          borderRadius: AppTheme.radiusLg,
+                        ),
+                        child: const Icon(Icons.groups_rounded, color: AppTheme.primary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Clube do livro', style: AppTheme.titleSerif),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Indique títulos, vote e participe do sorteio da leitura do mês.',
+                              style: AppTheme.captionSans.copyWith(color: AppTheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: AppTheme.outline),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.marginMobile),
             sliver: SliverToBoxAdapter(
               child: BibSectionHeader(title: 'Seu círculo'),

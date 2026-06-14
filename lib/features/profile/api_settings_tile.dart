@@ -52,7 +52,8 @@ class _ApiSettingsCardState extends State<ApiSettingsCard> {
             const SizedBox(height: 4),
             const Text(
               'Padrão: https://lumina-nodejs-api.vercel.app (produção)\n'
-              'Dev local — Genymotion: http://10.0.3.2:5000 | AVD: http://10.0.2.2:5000',
+              'Dev local — AVD: http://10.0.2.2:5000 | Genymotion: http://10.0.3.2:5000\n'
+              'No Android, 127.0.0.1 é convertido automaticamente para 10.0.2.2.',
               style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
             const SizedBox(height: 12),

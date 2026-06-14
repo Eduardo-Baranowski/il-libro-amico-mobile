@@ -17,6 +17,8 @@ import '../features/editor/editor_requests_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/messages/chat_screen.dart';
 import '../features/messages/conversations_screen.dart';
+import '../features/book_club/book_club_hub_screen.dart';
+import '../features/book_club/book_club_voting_screen.dart';
 import '../features/profile/account_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/shelves/shelves_screen.dart';
@@ -171,6 +173,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/cadastro',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/clube',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BookClubHubScreen(),
+      ),
+      GoRoute(
+        path: '/clube/votacao',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BookClubVotingScreen(),
       ),
       GoRoute(
         path: '/mensagens',

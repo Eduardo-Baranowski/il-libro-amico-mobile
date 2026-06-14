@@ -70,7 +70,7 @@ class ApiClient {
       throw ApiException(
         statusCode: 0,
         message:
-            'Sem conexão com ${ApiConfig.instance.baseUrl}. Verifique se a API está rodando (python run.py) e a URL em Conta. (${e.message})',
+            'Sem conexão com ${ApiConfig.instance.baseUrl}. Verifique se a API está rodando (npm run dev) e a URL em Conta. (${e.message})',
       );
     } on http.ClientException catch (e) {
       throw ApiException(

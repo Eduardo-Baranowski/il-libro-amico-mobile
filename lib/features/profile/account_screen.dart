@@ -13,6 +13,13 @@ import 'profile_edit_dialog.dart';
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
+  void _openProfileEditor(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const ProfileEditDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
@@ -43,43 +50,47 @@ class AccountScreen extends ConsumerWidget {
         Center(
           child: Stack(
             clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
               GestureDetector(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (context) => const ProfileEditDialog(),
-                ),
-                child: Container(
+                onTap: () => _openProfileEditor(context),
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: AppTheme.radiusXl,
-                    border: Border.all(color: AppTheme.surfaceContainer, width: 4),
+                    shape: BoxShape.circle,
                     boxShadow: AppTheme.cardShadow,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: AppTheme.radiusXl,
-                    child: SizedBox(
-                      width: 112,
-                      height: 112,
-                      child: UserAvatar(url: auth.imageUrl, name: auth.name ?? '', radius: 56),
+                    border: Border.all(
+                      color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                      width: 2,
                     ),
+                  ),
+                  child: UserAvatar(
+                    url: auth.imageUrl,
+                    name: auth.name ?? '',
+                    radius: 56,
                   ),
                 ),
               ),
               Positioned(
-                bottom: -4,
-                right: -4,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.surface, width: 3),
-                    boxShadow: AppTheme.cardShadow,
+                bottom: 0,
+                right: 0,
+                child: Material(
+                  color: AppTheme.primary,
+                  elevation: 2,
+                  shadowColor: Colors.black26,
+                  shape: const CircleBorder(
+                    side: BorderSide(color: AppTheme.surface, width: 3),
                   ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.edit_rounded,
-                    color: Colors.white,
-                    size: 20,
+                  child: InkWell(
+                    onTap: () => _openProfileEditor(context),
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -111,6 +122,12 @@ class AccountScreen extends ConsumerWidget {
               icon: Icons.chat_bubble_outline_rounded,
               title: 'Mensagens',
               onTap: () => context.push('/mensagens'),
+            ),
+            _MenuTile(
+              icon: Icons.groups_outlined,
+              title: 'Clube do livro',
+              subtitle: 'Indique, vote e participe do sorteio',
+              onTap: () => context.push('/clube'),
             ),
             if (auth.role == UserRole.leitor)
               _MenuTile(

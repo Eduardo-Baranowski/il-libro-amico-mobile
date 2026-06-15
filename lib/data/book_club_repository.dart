@@ -74,4 +74,8 @@ class BookClubRepository {
       },
     );
   }
+
+  Future<void> draw() {
+    return _api.post('/reader/book-club/draw');
+  }
 }

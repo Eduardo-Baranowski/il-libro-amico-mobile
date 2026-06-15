@@ -38,7 +38,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             _email.text.trim(),
             _senha.text,
           );
-      if (mounted) context.go('/');
+      if (mounted) context.go('/cadastro/foto');
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {

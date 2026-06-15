@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/models/book_club_models.dart';
+import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
 import '../../data/book_club_repository.dart';
@@ -134,8 +135,52 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _performDraw() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Realizar Sorteio'),
+        content: const Text('Deseja sortear o livro do mês agora? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sortear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    setState(() => _loading = true);
+    try {
+      await ref.read(bookClubRepositoryProvider).draw();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sorteio realizado com sucesso!')),
+        );
+      }
+      await _load(refresh: true);
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        setState(() => _loading = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        setState(() => _loading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authProvider);
     return Scaffold(
       appBar: const BibDetailAppBar(title: 'Clube do Livro'),
       floatingActionButton: _hub?.cycle.isOpen == true
@@ -173,6 +218,20 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                     children: [
                       if (_hub != null) ...[
                         _CycleHeader(cycle: _hub!.cycle),
+                        if (auth.role == UserRole.admin && _hub!.cycle.dataSorteio == null) ...[
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: _performDraw,
+                              icon: const Icon(Icons.casino_rounded),
+                              label: const Text('Realizar Sorteio (Admin)'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.secondary,
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         if (_hub!.featuredBook != null) ...[
                           Row(

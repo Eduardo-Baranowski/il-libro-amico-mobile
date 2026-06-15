@@ -165,6 +165,7 @@ class MyReadingStatus {
 class FeedItem {
   FeedItem({
     required this.id,
+    required this.leitorId,
     required this.leitorNome,
     required this.leitorImagemUrl,
     required this.livroTitulo,
@@ -181,6 +182,7 @@ class FeedItem {
   });
 
   final int id;
+  final int leitorId;
   final String leitorNome;
   final String? leitorImagemUrl;
   final String livroTitulo;
@@ -202,6 +204,7 @@ class FeedItem {
   }) =>
       FeedItem(
         id: id,
+        leitorId: leitorId,
         leitorNome: leitorNome,
         leitorImagemUrl: leitorImagemUrl,
         livroTitulo: livroTitulo,
@@ -222,6 +225,7 @@ class FeedItem {
     final livro = json['livro'] as Map<String, dynamic>? ?? {};
     return FeedItem(
       id: json['id'] as int,
+      leitorId: leitor['id'] as int? ?? 0,
       leitorNome: leitor['nome'] as String? ?? '',
       leitorImagemUrl: leitor['imagem_url'] as String?,
       livroTitulo: livro['titulo'] as String? ?? '',
@@ -414,17 +418,32 @@ class PublicUser {
     required this.nome,
     required this.papel,
     this.imagemUrl,
+    this.headline,
+    this.bio,
+    this.lidos = 0,
+    this.seguidores = 0,
   });
 
   final int id;
   final String nome;
   final UserRole papel;
   final String? imagemUrl;
+  final String? headline;
+  final String? bio;
+  final int lidos;
+  final int seguidores;
 
-  factory PublicUser.fromJson(Map<String, dynamic> json) => PublicUser(
-        id: json['id'] as int,
-        nome: json['nome'] as String? ?? '',
-        papel: UserRoleX.tryParse(json['papel'] as String?) ?? UserRole.leitor,
-        imagemUrl: json['imagem_url'] as String?,
-      );
+  factory PublicUser.fromJson(Map<String, dynamic> json) {
+    final stats = json['stats'] as Map<String, dynamic>? ?? {};
+    return PublicUser(
+      id: json['id'] as int,
+      nome: json['nome'] as String? ?? '',
+      papel: UserRoleX.tryParse(json['papel'] as String?) ?? UserRole.leitor,
+      imagemUrl: json['imagem_url'] as String?,
+      headline: json['headline'] as String?,
+      bio: json['bio'] as String?,
+      lidos: stats['lidos'] as int? ?? 0,
+      seguidores: stats['seguidores'] as int? ?? 0,
+    );
+  }
 }

@@ -9,6 +9,7 @@ import '../features/admin/admin_reports_screen.dart';
 import '../features/admin/admin_users_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
+import '../features/auth/register_photo_screen.dart';
 import '../features/books/book_detail_screen.dart';
 import '../features/books/books_screen.dart';
 import '../features/books/editor_public_screen.dart';
@@ -20,6 +21,7 @@ import '../features/messages/conversations_screen.dart';
 import '../features/book_club/book_club_hub_screen.dart';
 import '../features/book_club/book_club_voting_screen.dart';
 import '../features/profile/account_screen.dart';
+import '../features/profile/public_user_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/shelves/shelves_screen.dart';
 import '../features/shell/main_shell.dart';
@@ -86,6 +88,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/entrar';
       }
       if (isAuthRoute && auth.isAuthenticated) {
+        if (path == '/cadastro') return '/cadastro/foto';
         return '/';
       }
       if (path.startsWith('/admin') && auth.role != UserRole.admin) {
@@ -150,6 +153,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/usuario/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return PublicUserScreen(userId: id);
+        },
+      ),
+      GoRoute(
         path: '/splash',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SplashScreen(),
@@ -173,6 +184,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/cadastro',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/cadastro/foto',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const RegisterPhotoScreen(),
       ),
       GoRoute(
         path: '/clube',

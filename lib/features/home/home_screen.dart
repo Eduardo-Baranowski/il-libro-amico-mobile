@@ -474,41 +474,45 @@ class _FeedCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                UserAvatar(url: item.leitorImagemUrl, name: item.leitorNome, radius: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          style: AppTheme.labelSans,
-                          children: [
-                            TextSpan(
-                              text: item.leitorNome,
-                              style: const TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                            TextSpan(
-                              text: ' $statusVerb ',
-                              style: AppTheme.bodySans.copyWith(
-                                fontSize: 14,
-                                color: AppTheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w400,
+            InkWell(
+              onTap: () => context.push('/usuario/${item.leitorId}'),
+              borderRadius: AppTheme.radiusXl,
+              child: Row(
+                children: [
+                  UserAvatar(url: item.leitorImagemUrl, name: item.leitorNome, radius: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            style: AppTheme.labelSans,
+                            children: [
+                              TextSpan(
+                                text: item.leitorNome,
+                                style: const TextStyle(fontWeight: FontWeight.w800),
                               ),
-                            ),
-                            TextSpan(
-                              text: item.livroTitulo,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ],
+                              TextSpan(
+                                text: ' $statusVerb ',
+                                style: AppTheme.bodySans.copyWith(
+                                  fontSize: 14,
+                                  color: AppTheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: item.livroTitulo,
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             Row(

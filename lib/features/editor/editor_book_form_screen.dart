@@ -50,6 +50,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
   late final TextEditingController _preco;
   late final TextEditingController _estoque;
   late final TextEditingController _descricao;
+  late final TextEditingController _paginas;
   String _genero = 'Romance';
   String _condicao = 'novo';
   bool _saving = false;
@@ -71,6 +72,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     _preco = TextEditingController(text: b?.preco ?? '');
     _estoque = TextEditingController(text: '${b?.estoque ?? 0}');
     _descricao = TextEditingController(text: b?.descricao ?? '');
+    _paginas = TextEditingController(text: b?.paginas != null && b!.paginas > 0 ? '${b.paginas}' : '');
     if (b?.genero != null && b!.genero!.isNotEmpty) {
       _genero = _generos.contains(b.genero) ? b.genero! : 'Romance';
     }
@@ -79,7 +81,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
       if (match.isNotEmpty) _condicao = match.first;
     }
     _coverPreviewUrl = b?.imagemUrl;
-    for (final c in [_titulo, _autor, _preco, _estoque, _descricao]) {
+    for (final c in [_titulo, _autor, _preco, _estoque, _descricao, _paginas]) {
       c.addListener(() {
         if (mounted) setState(() {});
       });
@@ -96,6 +98,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     _preco.dispose();
     _estoque.dispose();
     _descricao.dispose();
+    _paginas.dispose();
     super.dispose();
   }
 
@@ -171,6 +174,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     setState(() => _saving = true);
     final repo = ref.read(editorRepositoryProvider);
     try {
+      final pInt = int.tryParse(_paginas.text.trim());
       if (widget.isEditing) {
         await repo.updateBook(
           id: widget.book!.id,
@@ -181,6 +185,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           genero: _genero,
           descricao: _descricao.text.trim(),
           condicao: _condicao,
+          paginas: pInt,
         );
       } else {
         await repo.createBook(
@@ -192,6 +197,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           descricao: _descricao.text.trim().isEmpty ? null : _descricao.text.trim(),
           openLibraryCoverId: _openLibraryCoverId,
           condicao: _condicao,
+          paginas: pInt,
         );
       }
       if (mounted) context.pop(true);
@@ -341,6 +347,11 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                             '${_estoque.text.trim().isEmpty ? '0' : _estoque.text.trim()} un.',
                                           ),
                                           _previewChip(Icons.category_outlined, _genero),
+                                          if (_paginas.text.trim().isNotEmpty)
+                                            _previewChip(
+                                              Icons.menu_book_outlined,
+                                              '${_paginas.text.trim()} pág.',
+                                            ),
                                         ],
                                       ),
                                     ],
@@ -525,6 +536,31 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                     ),
                                     validator: (v) =>
                                         v == null || v.trim().isEmpty ? 'Informe o autor' : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _LabeledField(
+                                  label: 'NÚMERO DE PÁGINAS',
+                                  child: TextFormField(
+                                    controller: _paginas,
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    decoration: const InputDecoration(
+                                      hintText: 'ex: 250',
+                                      prefixIcon: Icon(Icons.pages_outlined),
+                                    ),
+                                    validator: (v) {
+                                      if (v != null && v.trim().isNotEmpty) {
+                                        final parsed = int.tryParse(v);
+                                        if (parsed == null || parsed <= 0) {
+                                          return 'Número inválido';
+                                        }
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                               ],

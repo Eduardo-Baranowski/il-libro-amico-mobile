@@ -9,6 +9,7 @@ import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
+import '../profile/profile_edit_dialog.dart';
 
 final profileDetailsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final repo = ref.watch(readerRepositoryProvider);
@@ -219,7 +220,10 @@ class _ShelvesScreenState extends ConsumerState<ShelvesScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 onTap: () {
-                                  // Edit avatar action placeholder
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => const ProfileEditDialog(),
+                                  );
                                 },
                                 borderRadius: BorderRadius.circular(8),
                                 child: const Padding(
@@ -472,18 +476,27 @@ class _ShelfCard extends StatelessWidget {
                   ],
                   if (showProgress) ...[
                     const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: 0.35,
-                      backgroundColor: AppTheme.surfaceContainer,
-                      color: AppTheme.primary,
-                      minHeight: 4,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '35% lido',
-                      style: AppTheme.captionSans.copyWith(fontSize: 10),
-                    ),
+                    if (item.paginas > 0) ...[
+                      LinearProgressIndicator(
+                        value: (item.paginasLidas / item.paginas).clamp(0.0, 1.0),
+                        backgroundColor: AppTheme.surfaceContainer,
+                        color: AppTheme.primary,
+                        minHeight: 4,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${((item.paginasLidas / item.paginas).clamp(0.0, 1.0) * 100).toStringAsFixed(0)}% lido',
+                        style: AppTheme.captionSans.copyWith(fontSize: 10),
+                      ),
+                    ] else ...[
+                      Text(
+                        item.paginasLidas > 0
+                            ? '${item.paginasLidas} páginas lidas'
+                            : 'Lendo',
+                        style: AppTheme.captionSans.copyWith(fontSize: 10),
+                      ),
+                    ],
                   ],
                 ],
               ),

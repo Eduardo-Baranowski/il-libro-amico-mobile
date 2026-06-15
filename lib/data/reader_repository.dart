@@ -187,6 +187,7 @@ class ReaderRepository {
     required String status,
     int? nota,
     String? comentario,
+    int? paginasLidas,
   }) async {
     await _api.post(
       '/reader/readings',
@@ -195,6 +196,7 @@ class ReaderRepository {
         'status': status,
         if (nota != null) 'nota': nota,
         if (comentario != null && comentario.isNotEmpty) 'comentario': comentario,
+        if (paginasLidas != null) 'paginas_lidas': paginasLidas,
       },
     );
   }
@@ -228,4 +230,23 @@ class ReaderRepository {
   Future<void> deleteReading(int id) async {
     await _api.delete('/reader/readings/$id');
   }
+
+  Future<List<Address>> getAddresses() {
+    return _api.get(
+      '/reader/addresses',
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(Address.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<Address> addAddress(Map<String, dynamic> data) {
+    return _api.post(
+      '/reader/addresses',
+      body: data,
+      parser: (res) => Address.fromJson(res as Map<String, dynamic>),
+    );
+  }
 }
+

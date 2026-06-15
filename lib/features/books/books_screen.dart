@@ -106,11 +106,21 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (ref.watch(authProvider).role == UserRole.editor) {
-      return const EditorCatalogBody();
-    }
-
-    return RefreshIndicator(
+    final role = ref.watch(authProvider).role;
+    
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: role == UserRole.editor
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/editor/livro/novo'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Vender livro'),
+            )
+          : null,
+      body: role == UserRole.editor
+          ? const EditorCatalogBody()
+          : RefreshIndicator(
       onRefresh: () => _load(1),
       color: AppTheme.primary,
       child: CustomScrollView(
@@ -194,6 +204,7 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
             ),
         ],
       ),
+    ),
     );
   }
 }

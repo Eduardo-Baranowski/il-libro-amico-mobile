@@ -106,6 +106,7 @@ class EditorBook {
     this.descricao,
     this.imagemUrl,
     this.condicao,
+    this.paginas = 0,
   });
 
   final int id;
@@ -117,6 +118,7 @@ class EditorBook {
   final String? descricao;
   final String? imagemUrl;
   final String? condicao;
+  final int paginas;
 
   factory EditorBook.fromJson(Map<String, dynamic> json) => EditorBook(
         id: json['id'] as int,
@@ -128,6 +130,7 @@ class EditorBook {
         descricao: json['descricao'] as String?,
         imagemUrl: json['imagem_url'] as String?,
         condicao: json['condicao'] as String? ?? 'novo',
+        paginas: json['paginas'] as int? ?? 0,
       );
 }
 

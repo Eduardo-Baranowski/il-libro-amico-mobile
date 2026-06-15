@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/models/user_role.dart';
 import '../../core/widgets/bibliotheca.dart';
+import '../cart/cart_notifier.dart';
 import '../../core/widgets/book_cover.dart';
 
 class MainShell extends ConsumerWidget {
@@ -22,6 +23,7 @@ class MainShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
+    final cartItems = ref.watch(cartProvider);
     final index = navigationShell.currentIndex;
     final showSellFab = auth.role == UserRole.editor && index == 1;
 
@@ -29,24 +31,14 @@ class MainShell extends ConsumerWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          BibTopBar(onSearch: () => context.push('/buscar')),
+          BibTopBar(
+            onSearch: () => context.push('/buscar'),
+            onCart: () => context.push('/carrinho'),
+            cartCount: cartItems.length,
+          ),
           Expanded(child: navigationShell),
         ],
       ),
-      floatingActionButton: showSellFab
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/editor/livro/novo'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Vender livro'),
-            )
-          : (auth.isAuthenticated && index == 0)
-              ? FloatingActionButton(
-                  onPressed: () => context.push('/buscar'),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: const Icon(Icons.add_rounded),
-                )
-              : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: _onTap,

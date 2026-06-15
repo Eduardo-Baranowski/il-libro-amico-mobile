@@ -72,6 +72,7 @@ class Book {
     this.imagemUrl,
     this.statusEstoque,
     this.condicao,
+    this.paginas = 0,
   });
 
   final int id;
@@ -86,6 +87,7 @@ class Book {
   final String? imagemUrl;
   final String? statusEstoque;
   final String? condicao;
+  final int paginas;
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
         id: json['id'] as int,
@@ -100,6 +102,7 @@ class Book {
         imagemUrl: json['imagem_url'] as String?,
         statusEstoque: json['status_estoque'] as String?,
         condicao: json['condicao'] as String? ?? 'novo',
+        paginas: json['paginas'] as int? ?? 0,
       );
 }
 
@@ -116,6 +119,8 @@ class BookDetails extends Book {
     super.descricao,
     super.imagemUrl,
     super.statusEstoque,
+    super.condicao,
+    super.paginas = 0,
     this.editoraImagemUrl,
     this.myReading,
   });
@@ -137,6 +142,8 @@ class BookDetails extends Book {
       descricao: json['descricao'] as String?,
       imagemUrl: json['imagem_url'] as String?,
       statusEstoque: json['status_estoque'] as String?,
+      condicao: json['condicao'] as String? ?? 'novo',
+      paginas: json['paginas'] as int? ?? 0,
       editoraImagemUrl: json['editora_imagem_url'] as String?,
       myReading: reading is Map<String, dynamic>
           ? MyReadingStatus.fromJson(reading)
@@ -146,12 +153,13 @@ class BookDetails extends Book {
 }
 
 class MyReadingStatus {
-  MyReadingStatus({required this.id, required this.status, this.nota, this.comentario});
+  MyReadingStatus({required this.id, required this.status, this.nota, this.comentario, this.paginasLidas = 0});
 
   final int id;
   final String status;
   final int? nota;
   final String? comentario;
+  final int paginasLidas;
 
   factory MyReadingStatus.fromJson(Map<String, dynamic> json) =>
       MyReadingStatus(
@@ -159,6 +167,7 @@ class MyReadingStatus {
         status: json['status'] as String? ?? 'lendo',
         nota: json['nota'] as int?,
         comentario: json['comentario'] as String?,
+        paginasLidas: json['paginas_lidas'] as int? ?? 0,
       );
 }
 
@@ -253,6 +262,8 @@ class ReadingItem {
     required this.status,
     this.nota,
     this.comentario,
+    this.paginasLidas = 0,
+    this.paginas = 0,
   });
 
   final int id;
@@ -263,6 +274,8 @@ class ReadingItem {
   final String status;
   final int? nota;
   final String? comentario;
+  final int paginasLidas;
+  final int paginas;
 
   factory ReadingItem.fromJson(Map<String, dynamic> json) {
     final livro = json['livro'] as Map<String, dynamic>? ?? {};
@@ -275,6 +288,8 @@ class ReadingItem {
       status: json['status'] as String? ?? '',
       nota: json['nota'] as int?,
       comentario: json['comentario'] as String?,
+      paginasLidas: json['paginas_lidas'] as int? ?? 0,
+      paginas: livro['paginas'] as int? ?? 0,
     );
   }
 }
@@ -447,3 +462,87 @@ class PublicUser {
     );
   }
 }
+
+// ─── Carrinho de compras ─────────────────────────────────────────────────────
+
+class CartItem {
+  CartItem({required this.book, this.quantity = 1});
+
+  final Book book;
+  int quantity;
+
+  CartItem copyWith({int? quantity}) =>
+      CartItem(book: book, quantity: quantity ?? this.quantity);
+
+  double get lineTotal {
+    final price = double.tryParse(book.preco) ?? 0.0;
+    return price * quantity;
+  }
+}
+
+class PurchaseConfirmation {
+  PurchaseConfirmation({
+    required this.orderNumber,
+    required this.estimatedArrival,
+    required this.items,
+    required this.subtotal,
+    required this.shipping,
+  });
+
+  final String orderNumber;
+  final String estimatedArrival;
+  final List<CartItem> items;
+  final double subtotal;
+  final double shipping;
+
+  double get total => subtotal + shipping;
+}
+
+class Address {
+  Address({
+    required this.id,
+    required this.userId,
+    required this.label,
+    required this.rua,
+    required this.numero,
+    required this.bairro,
+    required this.cidade,
+    required this.estado,
+    required this.cep,
+  });
+
+  final int id;
+  final int userId;
+  final String label;
+  final String rua;
+  final String numero;
+  final String bairro;
+  final String cidade;
+  final String estado;
+  final String cep;
+
+  factory Address.fromJson(Map<String, dynamic> json) => Address(
+        id: json['id'] as int? ?? 0,
+        userId: json['user_id'] as int? ?? 0,
+        label: json['label'] as String? ?? '',
+        rua: json['rua'] as String? ?? '',
+        numero: json['numero'] as String? ?? '',
+        bairro: json['bairro'] as String? ?? '',
+        cidade: json['cidade'] as String? ?? '',
+        estado: json['estado'] as String? ?? '',
+        cep: json['cep'] as String? ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'user_id': userId,
+        'label': label,
+        'rua': rua,
+        'numero': numero,
+        'bairro': bairro,
+        'cidade': cidade,
+        'estado': estado,
+        'cep': cep,
+      };
+}
+

@@ -5,10 +5,12 @@ import '../theme/app_theme.dart';
 
 /// Barra superior fixa estilo Stitch (título Bibliotheca + busca).
 class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
-  const BibTopBar({super.key, this.showSearch = true, this.onSearch});
+  const BibTopBar({super.key, this.showSearch = true, this.onSearch, this.onCart, this.cartCount});
 
   final bool showSearch;
   final VoidCallback? onSearch;
+  final VoidCallback? onCart;
+  final int? cartCount;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -34,6 +36,37 @@ class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
                     onPressed: onSearch ?? () => context.push('/buscar'),
                     icon: const Icon(Icons.search_rounded, color: AppTheme.primary),
                     tooltip: 'Buscar',
+                  ),
+                if (onCart != null)
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IconButton(
+                        onPressed: onCart,
+                        icon: const Icon(Icons.shopping_bag_outlined, color: AppTheme.primary),
+                        tooltip: 'Carrinho',
+                      ),
+                      if (cartCount != null && cartCount! > 0)
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '$cartCount',
+                              style: AppTheme.captionSans.copyWith(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
               ],
             ),

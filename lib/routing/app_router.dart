@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/auth/auth_notifier.dart';
 import '../core/models/admin_editor_models.dart';
+import '../core/models/models.dart';
 import '../core/models/user_role.dart';
 import '../features/admin/admin_reports_screen.dart';
 import '../features/admin/admin_users_screen.dart';
@@ -13,6 +14,9 @@ import '../features/auth/register_photo_screen.dart';
 import '../features/books/book_detail_screen.dart';
 import '../features/books/books_screen.dart';
 import '../features/books/editor_public_screen.dart';
+import '../features/cart/cart_screen.dart';
+import '../features/cart/checkout_screen.dart';
+import '../features/cart/purchase_confirmation_screen.dart';
 import '../features/editor/editor_book_form_screen.dart';
 import '../features/editor/editor_requests_screen.dart';
 import '../features/home/home_screen.dart';
@@ -65,9 +69,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final onboardingCompleted = ref.read(onboardingCompletedProvider);
       final path = state.uri.path;
       final isAuthRoute = path == '/entrar' || path == '/cadastro';
-      final needsAuth = path.startsWith('/mensagens') ||
-          path.startsWith('/admin') ||
-          path.startsWith('/editor/');
+      final needsAuth = ['/mensagens', '/estante', '/carrinho', '/checkout'].any((p) => path.startsWith(p));
+      final isAdminRoute = path.startsWith('/admin');
+      final isEditorRoute = path.startsWith('/editor/');
 
       // Splash screen lida com a própria navegação após terminar a animação
       if (path == '/splash') return null;
@@ -248,6 +252,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = int.parse(state.pathParameters['id']!);
           return EditorPublicScreen(editorId: id);
+        },
+      ),
+      GoRoute(
+        path: '/carrinho',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CartScreen(),
+      ),
+      GoRoute(
+        path: '/checkout',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CheckoutScreen(),
+      ),
+      GoRoute(
+        path: '/compra/confirmacao',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final confirmation = state.extra as PurchaseConfirmation;
+          return PurchaseConfirmationScreen(confirmation: confirmation);
         },
       ),
     ],

@@ -59,6 +59,7 @@ class EditorRepository {
     String? descricao,
     int? openLibraryCoverId,
     String condicao = 'novo',
+    int? paginas,
   }) async {
     final res = await _api.postMultipart<Map<String, dynamic>>(
       '/editor/books',
@@ -72,6 +73,7 @@ class EditorRepository {
         if (descricao != null) 'descricao': descricao,
         if (openLibraryCoverId != null)
           'open_library_cover_id': '$openLibraryCoverId',
+        if (paginas != null) 'paginas': '$paginas',
       },
       parser: (d) => d as Map<String, dynamic>,
     );
@@ -88,6 +90,7 @@ class EditorRepository {
     String? descricao,
     int? openLibraryCoverId,
     String? condicao,
+    int? paginas,
   }) async {
     final fields = <String, String>{};
     if (titulo != null) fields['titulo'] = titulo;
@@ -100,6 +103,7 @@ class EditorRepository {
     if (openLibraryCoverId != null) {
       fields['open_library_cover_id'] = '$openLibraryCoverId';
     }
+    if (paginas != null) fields['paginas'] = '$paginas';
     await _api.putMultipart('/editor/books/$id', fields: fields);
   }
 

@@ -161,95 +161,108 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-              child: SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.55,
-                child: Column(
-                  children: [
+        final bottomPadding = MediaQuery.viewInsetsOf(ctx).bottom;
+        final safeBottom = MediaQuery.paddingOf(ctx).bottom;
+
+        return Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.7),
+          padding: EdgeInsets.only(bottom: bottomPadding > 0 ? bottomPadding : safeBottom),
+          child: StatefulBuilder(
+            builder: (statefulContext, setModalState) {
+              Future<void> handleSend() async {
+                final text = controller.text.trim();
+                if (text.isEmpty) return;
+                try {
+                  final count = await ref
+                      .read(readerRepositoryProvider)
+                      .addFeedComment(item.id, text);
+                  if (!ctx.mounted) return;
+                  controller.clear();
+                  comments = await ref
+                      .read(readerRepositoryProvider)
+                      .feedComments(item.id);
+                  if (mounted) {
+                    setState(() {
+                      _items[index] = item.copyWith(commentsCount: count);
+                    });
+                  }
+                  if (ctx.mounted) {
+                    setModalState(() {});
+                  }
+                } on ApiException catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(content: Text(e.message)),
+                    );
+                  }
+                }
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text('Comentários', style: AppTheme.headlineSerif.copyWith(fontSize: 20)),
+                  ),
+                  Flexible(
+                    child: comments.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Text(
+                              'Nenhum comentário ainda.',
+                              style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: comments.length,
+                            itemBuilder: (_, i) {
+                              final c = comments[i];
+                              return ListTile(
+                                leading: UserAvatar(url: c.userImagemUrl, name: c.userNome, radius: 18),
+                                title: Text(c.userNome, style: AppTheme.labelSans),
+                                subtitle: Text(c.conteudo),
+                              );
+                            },
+                          ),
+                  ),
+                  if (ref.read(authProvider).isAuthenticated)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: controller,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => handleSend(),
+                              decoration: const InputDecoration(hintText: 'Escreva um comentário…'),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.send_rounded, color: AppTheme.primary),
+                            onPressed: handleSend,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
                     Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text('Comentários', style: AppTheme.headlineSerif.copyWith(fontSize: 20)),
-                    ),
-                    Expanded(
-                      child: comments.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Nenhum comentário ainda.',
-                                style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: comments.length,
-                              itemBuilder: (_, i) {
-                                final c = comments[i];
-                                return ListTile(
-                                  leading: UserAvatar(url: c.userImagemUrl, name: c.userNome, radius: 18),
-                                  title: Text(c.userNome, style: AppTheme.labelSans),
-                                  subtitle: Text(c.conteudo),
-                                );
-                              },
-                            ),
-                    ),
-                    if (ref.read(authProvider).isAuthenticated)
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: controller,
-                                decoration: const InputDecoration(hintText: 'Escreva um comentário…'),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.send_rounded, color: AppTheme.primary),
-                              onPressed: () async {
-                                final text = controller.text.trim();
-                                if (text.isEmpty) return;
-                                try {
-                                  final count = await ref
-                                      .read(readerRepositoryProvider)
-                                      .addFeedComment(item.id, text);
-                                  controller.clear();
-                                  comments = await ref
-                                      .read(readerRepositoryProvider)
-                                      .feedComments(item.id);
-                                  setState(() {
-                                    _items[index] = item.copyWith(commentsCount: count);
-                                  });
-                                  setModalState(() {});
-                                } on ApiException catch (e) {
-                                  if (ctx.mounted) {
-                                    ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(content: Text(e.message)),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            context.push('/entrar');
-                          },
-                          child: const Text('Entre para comentar'),
-                        ),
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          context.push('/entrar');
+                        },
+                        child: const Text('Entre para comentar'),
                       ),
-                  ],
-                ),
-              ),
-            );
-          },
+                    ),
+                ],
+              );
+            },
+          ),
         );
       },
     );
@@ -264,7 +277,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    final auth = ref.watch(authProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: auth.isAuthenticated
+          ? FloatingActionButton(
+              onPressed: () => context.push('/buscar'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.add_rounded),
+            )
+          : null,
+      body: RefreshIndicator(
       onRefresh: _refresh,
       color: AppTheme.primary,
       child: CustomScrollView(
@@ -440,6 +464,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
         ],
       ),
+    ),
     );
   }
 }

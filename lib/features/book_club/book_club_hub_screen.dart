@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
+import '../../core/models/admin_editor_models.dart';
 import '../../core/models/book_club_models.dart';
 import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
@@ -14,7 +16,9 @@ import 'widgets/nominate_book_sheet.dart';
 import 'widgets/nomination_card.dart';
 
 class BookClubHubScreen extends ConsumerStatefulWidget {
-  const BookClubHubScreen({super.key});
+  const BookClubHubScreen({super.key, required this.clubId});
+
+  final int clubId;
 
   @override
   ConsumerState<BookClubHubScreen> createState() => _BookClubHubScreenState();
@@ -38,7 +42,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
       _error = null;
     });
     try {
-      final hub = await ref.read(bookClubRepositoryProvider).hub();
+      final hub = await ref.read(bookClubRepositoryProvider).hub(widget.clubId);
       if (mounted) setState(() => _hub = hub);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -47,6 +51,11 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  bool get _isOwnerOrAdmin {
+    final auth = ref.read(authProvider);
+    return _hub?.club?.isOwner == true || auth.role == UserRole.admin;
   }
 
   Future<void> _vote(BookClubNomination nomination) async {
@@ -58,19 +67,16 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
 
     setState(() => _votingIds.add(nomination.id));
     try {
-      final result = await ref.read(bookClubRepositoryProvider).toggleVote(nomination.id);
+      final result =
+          await ref.read(bookClubRepositoryProvider).toggleVote(widget.clubId, nomination.id);
       if (!mounted || _hub == null) return;
 
       setState(() {
-        _hub = BookClubHub(
-          cycle: _hub!.cycle,
-          featuredBook: _hub!.featuredBook,
+        _hub = _hub!.copyWith(
           nominationsPreview: _hub!.nominationsPreview.map((n) {
             if (n.id != nomination.id) return n;
             return n.copyWith(votesCount: result.votesCount, votedByMe: result.voted);
           }).toList(),
-          totalNominations: _hub!.totalNominations,
-          maxVotesPerUser: _hub!.maxVotesPerUser,
           userStats: _hub!.userStats != null
               ? BookClubUserStats(
                   votesUsed: _hub!.maxVotesPerUser - result.votesRemaining,
@@ -110,6 +116,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
       builder: (context) => NominateBookSheet(
         searchBooks: (query) => ref.read(searchRepositoryProvider).search(query),
         onSubmit: (data) => ref.read(bookClubRepositoryProvider).nominate(
+              widget.clubId,
               livroId: data.livroId,
               titulo: data.titulo,
               autor: data.autor,
@@ -158,7 +165,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
 
     setState(() => _loading = true);
     try {
-      await ref.read(bookClubRepositoryProvider).draw();
+      await ref.read(bookClubRepositoryProvider).draw(widget.clubId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sorteio realizado com sucesso!')),
@@ -178,11 +185,117 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
     }
   }
 
+  Future<void> _openInviteDialog() async {
+    final queryController = TextEditingController();
+    List<SearchUserHit> results = [];
+    bool searching = false;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Convidar membro'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: queryController,
+                  decoration: const InputDecoration(
+                    labelText: 'Buscar por nome ou e-mail',
+                    hintText: 'Digite para buscar...',
+                  ),
+                  onSubmitted: (q) async {
+                    if (q.trim().length < 2) return;
+                    setDialogState(() => searching = true);
+                    try {
+                      final res = await ref.read(searchRepositoryProvider).search(q.trim());
+                      setDialogState(() {
+                        results = res.users;
+                        searching = false;
+                      });
+                    } catch (_) {
+                      setDialogState(() => searching = false);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                if (searching)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(color: AppTheme.primary),
+                  )
+                else if (results.isEmpty)
+                  Text(
+                    'Busque um usuário para convidar',
+                    style: AppTheme.captionSans.copyWith(color: AppTheme.onSurfaceVariant),
+                  )
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: results.length,
+                      itemBuilder: (context, index) {
+                        final user = results[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage:
+                                user.imagemUrl != null ? NetworkImage(user.imagemUrl!) : null,
+                            child: user.imagemUrl == null ? Text(user.nome[0]) : null,
+                          ),
+                          title: Text(user.nome),
+                          onTap: () async {
+                            try {
+                              await ref
+                                  .read(bookClubRepositoryProvider)
+                                  .inviteUser(widget.clubId, userId: user.id);
+                              if (dialogContext.mounted) {
+                                Navigator.pop(dialogContext);
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                  SnackBar(content: Text('${user.nome} adicionado ao clube')),
+                                );
+                              }
+                            } on ApiException catch (e) {
+                              if (dialogContext.mounted) {
+                                ScaffoldMessenger.of(dialogContext)
+                                    .showSnackBar(SnackBar(content: Text(e.message)));
+                              }
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    queryController.dispose();
+  }
+
+  void _copyInviteCode(String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Código copiado!')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
+    final clubName = _hub?.club?.nome ?? 'Clube do Livro';
+
     return Scaffold(
-      appBar: const BibDetailAppBar(title: 'Clube do Livro'),
+      appBar: BibDetailAppBar(title: clubName),
       floatingActionButton: _hub?.cycle.isOpen == true
           ? FloatingActionButton.extended(
               onPressed: _openNominate,
@@ -200,11 +313,16 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(AppTheme.marginMobile),
                     children: [
-                      Text('Clube do Livro', style: AppTheme.headlineSerif),
+                      Text(clubName, style: AppTheme.headlineSerif),
                       const SizedBox(height: 12),
                       Text(_error!, style: AppTheme.bodySans.copyWith(color: AppTheme.error)),
                       const SizedBox(height: 16),
                       FilledButton(onPressed: _load, child: const Text('Tentar novamente')),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: () => context.go('/clube'),
+                        child: const Text('Voltar aos clubes'),
+                      ),
                     ],
                   )
                 : ListView(
@@ -217,20 +335,85 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                     ),
                     children: [
                       if (_hub != null) ...[
-                        _CycleHeader(cycle: _hub!.cycle),
-                        if (auth.role == UserRole.admin && _hub!.cycle.dataSorteio == null) ...[
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: _performDraw,
-                              icon: const Icon(Icons.casino_rounded),
-                              label: const Text('Realizar Sorteio (Admin)'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppTheme.secondary,
+                        _CycleHeader(cycle: _hub!.cycle, clubName: clubName),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => context.push('/clube/${widget.clubId}/membros'),
+                            icon: const Icon(Icons.groups_outlined),
+                            label: const Text('Ver membros'),
+                          ),
+                        ),
+                        if (_isOwnerOrAdmin) ...[
+                          if (_hub!.club?.conviteCodigo != null) ...[
+                            const SizedBox(height: 12),
+                            BibCard(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.vpn_key_outlined, color: AppTheme.primary),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Código de convite', style: AppTheme.labelSans),
+                                        Text(
+                                          _hub!.club!.conviteCodigo!,
+                                          style: AppTheme.titleSerif.copyWith(fontSize: 18),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () => _copyInviteCode(_hub!.club!.conviteCodigo!),
+                                    icon: const Icon(Icons.copy_rounded),
+                                    tooltip: 'Copiar código',
+                                  ),
+                                ],
                               ),
                             ),
+                          ],
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () =>
+                                      context.push('/clube/${widget.clubId}/solicitacoes'),
+                                  icon: const Icon(Icons.person_add_alt_1_outlined),
+                                  label: const Text('Solicitações'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _openInviteDialog,
+                                  icon: const Icon(Icons.group_add_outlined),
+                                  label: const Text('Convidar'),
+                                ),
+                              ),
+                            ],
                           ),
+                          if (_hub!.cycle.dataSorteio == null) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: _performDraw,
+                                icon: const Icon(Icons.casino_rounded),
+                                label: Text(
+                                  auth.role == UserRole.admin && _hub!.club?.isOwner != true
+                                      ? 'Realizar Sorteio (Admin)'
+                                      : 'Realizar Sorteio',
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppTheme.secondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                         const SizedBox(height: 24),
                         if (_hub!.featuredBook != null) ...[
@@ -264,7 +447,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                         BibSectionHeader(
                           title: 'Próximo sorteio',
                           actionLabel: 'Ver todas',
-                          onAction: () => context.push('/clube/votacao'),
+                          onAction: () => context.push('/clube/${widget.clubId}/votacao'),
                         ),
                         Text(
                           'O sorteio da leitura do clube acontece em ${_hub!.cycle.diasAteSorteio} dias.',
@@ -342,7 +525,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                         if (_hub!.totalNominations > _hub!.nominationsPreview.length)
                           Center(
                             child: TextButton.icon(
-                              onPressed: () => context.push('/clube/votacao'),
+                              onPressed: () => context.push('/clube/${widget.clubId}/votacao'),
                               icon: const Icon(Icons.arrow_forward_rounded),
                               label: Text('Ver todas as ${_hub!.totalNominations} indicações'),
                             ),
@@ -358,9 +541,10 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
 }
 
 class _CycleHeader extends StatelessWidget {
-  const _CycleHeader({required this.cycle});
+  const _CycleHeader({required this.cycle, required this.clubName});
 
   final BookClubCycleInfo cycle;
+  final String clubName;
 
   @override
   Widget build(BuildContext context) {
@@ -375,7 +559,7 @@ class _CycleHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text('Clube do Livro', style: AppTheme.headlineSerif),
+        Text(clubName, style: AppTheme.headlineSerif),
         const SizedBox(height: 8),
         Text(
           'Indique títulos, vote nas sugestões da comunidade e participe do sorteio da leitura do mês.',

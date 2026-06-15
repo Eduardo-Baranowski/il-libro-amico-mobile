@@ -23,6 +23,9 @@ import '../features/home/home_screen.dart';
 import '../features/messages/chat_screen.dart';
 import '../features/messages/conversations_screen.dart';
 import '../features/book_club/book_club_hub_screen.dart';
+import '../features/book_club/book_club_list_screen.dart';
+import '../features/book_club/book_club_members_screen.dart';
+import '../features/book_club/book_club_requests_screen.dart';
 import '../features/book_club/book_club_voting_screen.dart';
 import '../features/profile/account_screen.dart';
 import '../features/profile/public_user_screen.dart';
@@ -197,12 +200,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/clube',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BookClubHubScreen(),
-      ),
-      GoRoute(
-        path: '/clube/votacao',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BookClubVotingScreen(),
+        builder: (context, state) => const BookClubListScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = int.parse(state.pathParameters['id']!);
+              return BookClubHubScreen(clubId: id);
+            },
+            routes: [
+              GoRoute(
+                path: 'membros',
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return BookClubMembersScreen(clubId: id);
+                },
+              ),
+              GoRoute(
+                path: 'solicitacoes',
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return BookClubRequestsScreen(clubId: id);
+                },
+              ),
+              GoRoute(
+                path: 'votacao',
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return BookClubVotingScreen(clubId: id);
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/mensagens',

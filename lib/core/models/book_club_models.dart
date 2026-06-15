@@ -1,3 +1,131 @@
+class BookClub {
+  BookClub({
+    required this.id,
+    required this.nome,
+    this.descricao,
+    this.imagem,
+    required this.privado,
+    this.conviteCodigo,
+    this.criadoEm,
+    required this.isMember,
+    this.membershipStatus,
+    this.papel,
+    this.userRole,
+  });
+
+  final int id;
+  final String nome;
+  final String? descricao;
+  final String? imagem;
+  final bool privado;
+  final String? conviteCodigo;
+  final String? criadoEm;
+  final bool isMember;
+  final String? membershipStatus;
+  final String? papel;
+  final String? userRole;
+
+  factory BookClub.fromJson(Map<String, dynamic> json) => BookClub(
+        id: json['id'] as int? ?? 0,
+        nome: json['nome'] as String? ?? '',
+        descricao: json['descricao'] as String?,
+        imagem: json['imagem'] as String?,
+        privado: json['privado'] as bool? ?? false,
+        conviteCodigo: json['convite_codigo'] as String?,
+        criadoEm: json['criado_em'] as String?,
+        isMember: json['is_member'] as bool? ?? false,
+        membershipStatus: json['membership_status'] as String?,
+        papel: json['papel'] as String?,
+        userRole: json['user_role'] as String?,
+      );
+
+  bool get isOwner => papel == 'dono' || userRole == 'dono';
+  bool get isPending => membershipStatus == 'pending_approval';
+  bool get isActiveMember =>
+      membershipStatus == 'active' || (isMember && membershipStatus == null);
+}
+
+class BookClubListResponse {
+  BookClubListResponse({required this.myClubs, required this.exploreClubs});
+
+  final List<BookClub> myClubs;
+  final List<BookClub> exploreClubs;
+
+  factory BookClubListResponse.fromJson(Map<String, dynamic> json) {
+    List<BookClub> parseList(dynamic raw) {
+      if (raw is! List) return [];
+      return raw.whereType<Map<String, dynamic>>().map(BookClub.fromJson).toList();
+    }
+
+    return BookClubListResponse(
+      myClubs: parseList(json['my_clubs']),
+      exploreClubs: parseList(json['explore_clubs']),
+    );
+  }
+}
+
+class BookClubMemberRequest {
+  BookClubMemberRequest({
+    required this.id,
+    required this.userId,
+    required this.userNome,
+    this.userEmail,
+    this.imagemUrl,
+    required this.criadoEm,
+  });
+
+  final int id;
+  final int userId;
+  final String userNome;
+  final String? userEmail;
+  final String? imagemUrl;
+  final String criadoEm;
+
+  factory BookClubMemberRequest.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>?;
+    return BookClubMemberRequest(
+      id: json['id'] as int? ?? 0,
+      userId: user?['id'] as int? ?? 0,
+      userNome: user?['nome'] as String? ?? '',
+      userEmail: user?['email'] as String?,
+      imagemUrl: user?['imagem_url'] as String?,
+      criadoEm: json['criado_em'] as String? ?? '',
+    );
+  }
+}
+
+class BookClubMember {
+  BookClubMember({
+    required this.id,
+    required this.userId,
+    required this.userNome,
+    this.imagemUrl,
+    required this.papel,
+    required this.criadoEm,
+  });
+
+  final int id;
+  final int userId;
+  final String userNome;
+  final String? imagemUrl;
+  final String papel;
+  final String criadoEm;
+
+  bool get isOwner => papel == 'dono';
+
+  factory BookClubMember.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>?;
+    return BookClubMember(
+      id: json['id'] as int? ?? 0,
+      userId: user?['id'] as int? ?? json['user_id'] as int? ?? 0,
+      userNome: user?['nome'] as String? ?? '',
+      imagemUrl: user?['imagem_url'] as String?,
+      papel: json['papel'] as String? ?? 'membro',
+      criadoEm: json['criado_em'] as String? ?? '',
+    );
+  }
+}
+
 class BookClubCycleInfo {
   BookClubCycleInfo({
     required this.id,
@@ -133,6 +261,7 @@ class BookClubUserStats {
 
 class BookClubHub {
   BookClubHub({
+    this.club,
     required this.cycle,
     this.featuredBook,
     required this.nominationsPreview,
@@ -141,6 +270,7 @@ class BookClubHub {
     this.userStats,
   });
 
+  final BookClub? club;
   final BookClubCycleInfo cycle;
   final BookClubNomination? featuredBook;
   final List<BookClubNomination> nominationsPreview;
@@ -151,6 +281,9 @@ class BookClubHub {
   factory BookClubHub.fromJson(Map<String, dynamic> json) {
     final previewRaw = json['nominations_preview'];
     return BookClubHub(
+      club: json['club'] != null
+          ? BookClub.fromJson(json['club'] as Map<String, dynamic>)
+          : null,
       cycle: BookClubCycleInfo.fromJson(json['cycle'] as Map<String, dynamic>? ?? {}),
       featuredBook: json['featured_book'] != null
           ? BookClubNomination.fromJson(json['featured_book'] as Map<String, dynamic>)
@@ -168,6 +301,25 @@ class BookClubHub {
           : null,
     );
   }
+
+  BookClubHub copyWith({
+    BookClub? club,
+    BookClubCycleInfo? cycle,
+    BookClubNomination? featuredBook,
+    List<BookClubNomination>? nominationsPreview,
+    int? totalNominations,
+    int? maxVotesPerUser,
+    BookClubUserStats? userStats,
+  }) =>
+      BookClubHub(
+        club: club ?? this.club,
+        cycle: cycle ?? this.cycle,
+        featuredBook: featuredBook ?? this.featuredBook,
+        nominationsPreview: nominationsPreview ?? this.nominationsPreview,
+        totalNominations: totalNominations ?? this.totalNominations,
+        maxVotesPerUser: maxVotesPerUser ?? this.maxVotesPerUser,
+        userStats: userStats ?? this.userStats,
+      );
 }
 
 class BookClubActivity {

@@ -13,7 +13,9 @@ import 'widgets/nominate_book_sheet.dart';
 import 'widgets/nomination_card.dart';
 
 class BookClubVotingScreen extends ConsumerStatefulWidget {
-  const BookClubVotingScreen({super.key});
+  const BookClubVotingScreen({super.key, required this.clubId});
+
+  final int clubId;
 
   @override
   ConsumerState<BookClubVotingScreen> createState() => _BookClubVotingScreenState();
@@ -48,7 +50,7 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
 
   Future<void> _loadActivity() async {
     try {
-      final items = await ref.read(bookClubRepositoryProvider).activity();
+      final items = await ref.read(bookClubRepositoryProvider).activity(widget.clubId);
       if (mounted) setState(() => _activities..clear()..addAll(items));
     } catch (_) {}
   }
@@ -67,6 +69,7 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
 
     try {
       final res = await ref.read(bookClubRepositoryProvider).nominations(
+            widget.clubId,
             page: page,
             search: search ?? _searchController.text.trim(),
           );
@@ -100,7 +103,8 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
 
     setState(() => _votingIds.add(nomination.id));
     try {
-      final result = await ref.read(bookClubRepositoryProvider).toggleVote(nomination.id);
+      final result =
+          await ref.read(bookClubRepositoryProvider).toggleVote(widget.clubId, nomination.id);
       if (!mounted) return;
       setState(() {
         _votesRemaining = result.votesRemaining;
@@ -136,6 +140,7 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
       builder: (context) => NominateBookSheet(
         searchBooks: (query) => ref.read(searchRepositoryProvider).search(query),
         onSubmit: (data) => ref.read(bookClubRepositoryProvider).nominate(
+              widget.clubId,
               livroId: data.livroId,
               titulo: data.titulo,
               autor: data.autor,

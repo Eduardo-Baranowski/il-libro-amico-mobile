@@ -153,6 +153,11 @@ class AccountScreen extends ConsumerWidget {
                 title: 'Relatórios',
                 onTap: () => context.push('/admin/relatorios'),
               ),
+              _MenuTile(
+                icon: Icons.library_books_outlined,
+                title: 'Moderação de Livros',
+                onTap: () => context.push('/admin/livros'),
+              ),
             ],
           ),
         ],

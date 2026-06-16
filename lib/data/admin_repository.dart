@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/api_client.dart';
 import '../core/models/admin_editor_models.dart';
-import '../core/models/user_role.dart';
+import '../core/models/models.dart';
 import '../core/providers.dart';
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
@@ -43,6 +43,29 @@ class AdminRepository {
       '/admin/reports',
       parser: (data) => AdminReport.fromJson(data as Map<String, dynamic>),
     );
+  }
+
+  Future<PaginatedResponse<AdminBook>> listBooks({int page = 1}) {
+    return _api.get(
+      '/admin/books',
+      query: {'page': '$page'},
+      parser: (data) {
+        final map = data as Map<String, dynamic>;
+        return PaginatedResponse(
+          items: (map['items'] as List? ?? [])
+              .whereType<Map<String, dynamic>>()
+              .map(AdminBook.fromJson)
+              .toList(),
+          total: map['total'] as int? ?? 0,
+          page: map['page'] as int? ?? 1,
+          pages: map['pages'] as int? ?? 1,
+        );
+      },
+    );
+  }
+
+  Future<void> deleteBook(int bookId) async {
+    await _api.delete('/admin/books/$bookId');
   }
 
   Future<void> refreshMetrics() async {

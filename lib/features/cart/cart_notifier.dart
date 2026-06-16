@@ -27,6 +27,11 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 
   /// Adiciona livro ao carrinho. Se já existir, incrementa a quantidade.
   void addBook(Book book) {
+    final price = double.tryParse(book.preco) ?? 0.0;
+    if (price <= 0) {
+      return;
+    }
+
     final index = state.indexWhere((i) => i.book.id == book.id);
     if (index >= 0) {
       final updated = List<CartItem>.from(state);

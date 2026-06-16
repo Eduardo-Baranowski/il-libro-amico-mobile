@@ -53,6 +53,7 @@ class BookLookupItem {
   BookLookupItem({
     required this.titulo,
     required this.autor,
+    this.editora,
     this.descricao,
     this.genero,
     this.ano,
@@ -65,6 +66,7 @@ class BookLookupItem {
 
   final String titulo;
   final String autor;
+  final String? editora;
   final String? descricao;
   final String? genero;
   final int? ano;
@@ -77,6 +79,7 @@ class BookLookupItem {
   factory BookLookupItem.fromJson(Map<String, dynamic> json) => BookLookupItem(
         titulo: json['titulo'] as String? ?? '',
         autor: json['autor'] as String? ?? '',
+        editora: json['editora'] as String?,
         descricao: json['descricao'] as String?,
         genero: json['genero'] as String?,
         ano: json['ano'] as int?,
@@ -248,5 +251,41 @@ class SearchEditorHit {
         id: json['id'] as int,
         nome: json['nome'] as String? ?? '',
         imagemUrl: json['imagem_url'] as String?,
+      );
+}
+
+class AdminBook {
+  AdminBook({
+    required this.id,
+    required this.titulo,
+    required this.autor,
+    required this.editorNome,
+    required this.editorId,
+    required this.preco,
+    required this.estoque,
+    this.genero,
+    this.dataCadastro,
+  });
+
+  final int id;
+  final String titulo;
+  final String autor;
+  final String editorNome;
+  final int editorId;
+  final String preco;
+  final int estoque;
+  final String? genero;
+  final String? dataCadastro;
+
+  factory AdminBook.fromJson(Map<String, dynamic> json) => AdminBook(
+        id: json['id'] as int,
+        titulo: json['titulo'] as String? ?? '',
+        autor: json['autor'] as String? ?? '',
+        editorNome: json['editor_nome'] as String? ?? '',
+        editorId: json['editor_id'] as int,
+        preco: json['preco']?.toString() ?? '0',
+        estoque: json['estoque'] as int? ?? 0,
+        genero: json['genero'] as String?,
+        dataCadastro: json['data_cadastro'] as String?,
       );
 }

@@ -60,6 +60,7 @@ class EditorRepository {
     int? openLibraryCoverId,
     String condicao = 'novo',
     int? paginas,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
   }) async {
     final res = await _api.postMultipart<Map<String, dynamic>>(
       '/editor/books',
@@ -75,6 +76,7 @@ class EditorRepository {
           'open_library_cover_id': '$openLibraryCoverId',
         if (paginas != null) 'paginas': '$paginas',
       },
+      file: imageFile,
       parser: (d) => d as Map<String, dynamic>,
     );
     return res['id'] as int? ?? 0;
@@ -91,6 +93,7 @@ class EditorRepository {
     int? openLibraryCoverId,
     String? condicao,
     int? paginas,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
   }) async {
     final fields = <String, String>{};
     if (titulo != null) fields['titulo'] = titulo;
@@ -104,7 +107,7 @@ class EditorRepository {
       fields['open_library_cover_id'] = '$openLibraryCoverId';
     }
     if (paginas != null) fields['paginas'] = '$paginas';
-    await _api.putMultipart('/editor/books/$id', fields: fields);
+    await _api.putMultipart('/editor/books/$id', fields: fields, file: imageFile);
   }
 
   Future<void> archiveBook(int id) async {

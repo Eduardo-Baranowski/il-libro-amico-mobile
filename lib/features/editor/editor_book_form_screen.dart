@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io' as dart_io;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/models/admin_editor_models.dart';
@@ -62,6 +65,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
   String? _lookupError;
   String? _coverPreviewUrl;
   int? _openLibraryCoverId;
+  XFile? _pickedCoverFile; // imagem escolhida manualmente da galeria/câmera
 
   @override
   void initState() {
@@ -146,6 +150,124 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     }
   }
 
+  /// Abre seletor de imagem (galeria ou câmera) para o usuário escolher a capa.
+  Future<void> _pickCover(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1200,
+        maxHeight: 1800,
+      );
+      if (file == null) return;
+      if (mounted) {
+        setState(() {
+          _pickedCoverFile = file;
+          _coverPreviewUrl = file.path; // preview local
+          _openLibraryCoverId = null; // descarta seleção da Open Library
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não foi possível abrir a galeria: $e')),
+        );
+      }
+    }
+  }
+
+  /// Exibe um bottom sheet para escolher galeria ou câmera.
+  void _showPickCoverSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Escolher capa',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.photo_library_rounded, color: AppTheme.primary),
+              ),
+              title: const Text('Galeria de fotos',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickCover(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.camera_alt_rounded, color: AppTheme.primary),
+              ),
+              title: const Text('Tirar foto',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickCover(ImageSource.camera);
+              },
+            ),
+            if (_pickedCoverFile != null || _openLibraryCoverId != null)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.delete_outline_rounded, color: Colors.red.shade600),
+                ),
+                title: Text(
+                  'Remover capa personalizada',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.red.shade600,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    _pickedCoverFile = null;
+                    _openLibraryCoverId = null;
+                    _coverPreviewUrl = widget.book?.imagemUrl;
+                  });
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _applyLookup(BookLookupItem item) {
     setState(() {
       _titulo.text = item.titulo;
@@ -169,12 +291,41 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     );
   }
 
+  /// Usado no modo de edição: apenas atualiza a capa, sem sobrescrever os campos.
+  void _applyCoverOnly(BookLookupItem item) {
+    if (item.coverId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Este livro não possui capa na Open Library.')),
+      );
+      return;
+    }
+    setState(() {
+      _coverPreviewUrl = item.imagemUrl;
+      _openLibraryCoverId = item.coverId;
+      _lookupController.clear();
+      _lookupResults = [];
+      _lookupError = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Capa selecionada — clique em "Salvar alterações" para aplicar.')),
+    );
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final repo = ref.read(editorRepositoryProvider);
     try {
       final pInt = int.tryParse(_paginas.text.trim());
+      // Arquivo de imagem escolhido manualmente (tem prioridade sobre Open Library)
+      final imageFile = _pickedCoverFile != null
+          ? (
+              fieldName: 'imagem',
+              filePath: _pickedCoverFile!.path,
+              mimeType: 'image/jpeg',
+            )
+          : null;
+
       if (widget.isEditing) {
         await repo.updateBook(
           id: widget.book!.id,
@@ -186,6 +337,9 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           descricao: _descricao.text.trim(),
           condicao: _condicao,
           paginas: pInt,
+          // Imagem manual tem prioridade; se não houver, usa Open Library
+          imageFile: imageFile,
+          openLibraryCoverId: imageFile == null ? _openLibraryCoverId : null,
         );
       } else {
         await repo.createBook(
@@ -195,7 +349,8 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           estoque: _estoque.text.trim(),
           genero: _genero,
           descricao: _descricao.text.trim().isEmpty ? null : _descricao.text.trim(),
-          openLibraryCoverId: _openLibraryCoverId,
+          openLibraryCoverId: imageFile == null ? _openLibraryCoverId : null,
+          imageFile: imageFile,
           condicao: _condicao,
           paginas: pInt,
         );
@@ -237,6 +392,14 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 3,
+                            color: Color.fromARGB(128, 0, 0, 0),
+                          ),
+                        ],
                       ),
                     ),
                     flexibleSpace: FlexibleSpaceBar(
@@ -244,19 +407,45 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                       background: Stack(
                         fit: StackFit.expand,
                         children: [
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  AppTheme.primary,
-                                  AppTheme.primary.withValues(alpha: 0.85),
-                                  const Color(0xFF8B6FFF),
-                                ],
+                          // Background image with blur
+                          if (coverUrl != null && coverUrl.isNotEmpty)
+                            Positioned.fill(
+                              child: ImageFiltered(
+                                imageFilter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                                child: _pickedCoverFile != null
+                                    ? Image.file(
+                                        dart_io.File(_pickedCoverFile!.path),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : BookCover(
+                                        url: coverUrl,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        borderRadius: 0,
+                                      ),
+                              ),
+                            )
+                          else
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppTheme.primary,
+                                    AppTheme.primary.withValues(alpha: 0.85),
+                                    const Color(0xFF8B6FFF),
+                                  ],
+                                ),
                               ),
                             ),
+                          // Dark overlay
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.3),
+                            ),
                           ),
+                          // Decorative icon
                           Positioned(
                             right: -30,
                             top: -20,
@@ -274,22 +463,64 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                 tag: book != null ? 'book-cover-${book.id}' : 'book-cover-new',
                                 child: Material(
                                   color: Colors.transparent,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.25),
-                                          blurRadius: 24,
-                                          offset: const Offset(0, 12),
+                                  child: GestureDetector(
+                                    onTap: _showPickCoverSheet,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(16),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.25),
+                                                blurRadius: 24,
+                                                offset: const Offset(0, 12),
+                                              ),
+                                            ],
+                                          ),
+                                          child: _pickedCoverFile != null
+                                              ? ClipRRect(
+                                                  borderRadius: BorderRadius.circular(16),
+                                                  child: Image.file(
+                                                    // ignore: avoid_slow_async_io
+                                                    dart_io.File(_pickedCoverFile!.path),
+                                                    width: 100,
+                                                    height: 140,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : BookCover(
+                                                  url: coverUrl,
+                                                  width: 100,
+                                                  height: 140,
+                                                  borderRadius: 16,
+                                                ),
+                                        ),
+                                        Positioned(
+                                          bottom: -10,
+                                          right: -10,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.primary,
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppTheme.primary.withValues(alpha: 0.4),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.camera_alt_rounded,
+                                              size: 16,
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ],
-                                    ),
-                                    child: BookCover(
-                                      url: coverUrl,
-                                      width: 100,
-                                      height: 140,
-                                      borderRadius: 16,
                                     ),
                                   ),
                                 ),
@@ -359,151 +590,170 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                 ),
                               ),
                             ),
-                            if (!widget.isEditing) ...[
-                              const SizedBox(height: 12),
-                              _FormSection(
-                                title: 'Buscar obra',
-                                icon: Icons.travel_explore_rounded,
-                                children: [
-                                  Text(
-                                    'Open Library — título, autor ou ISBN',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppTheme.muted.withValues(alpha: 0.95),
-                                    ),
+                            const SizedBox(height: 12),
+                            _FormSection(
+                              title: widget.isEditing ? 'Alterar capa' : 'Buscar obra',
+                              icon: Icons.travel_explore_rounded,
+                              children: [
+                                Text(
+                                  widget.isEditing
+                                      ? 'Busque pelo título para substituir a capa'
+                                      : 'Open Library — título, autor ou ISBN',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppTheme.muted.withValues(alpha: 0.95),
                                   ),
-                                  const SizedBox(height: 12),
-                                  TextField(
-                                    controller: _lookupController,
-                                    decoration: InputDecoration(
-                                      hintText: 'ex: O Alienista, Machado de Assis, 978…',
-                                      prefixIcon: const Icon(Icons.search_rounded),
-                                      suffixIcon: _lookupLoading
-                                          ? const Padding(
-                                              padding: EdgeInsets.all(12),
-                                              child: SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              ),
-                                            )
-                                          : _lookupController.text.isNotEmpty
-                                              ? IconButton(
-                                                  icon: const Icon(Icons.clear_rounded),
-                                                  onPressed: () => _lookupController.clear(),
-                                                )
-                                              : null,
-                                    ),
-                                  ),
-                                  if (_lookupError != null) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      _lookupError!,
-                                      style: const TextStyle(color: AppTheme.error, fontSize: 13),
-                                    ),
-                                  ],
-                                  if (_lookupResults.isNotEmpty) ...[
-                                    const SizedBox(height: 12),
-                                    Material(
-                                      color: AppTheme.background,
-                                      borderRadius: BorderRadius.circular(14),
-                                      child: ListView.separated(
-                                        shrinkWrap: true,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemCount: _lookupResults.length,
-                                        separatorBuilder: (_, __) => Divider(
-                                          height: 1,
-                                          color: Colors.black.withValues(alpha: 0.06),
-                                        ),
-                                        itemBuilder: (context, i) {
-                                          final item = _lookupResults[i];
-                                          return InkWell(
-                                            onTap: () => _applyLookup(item),
-                                            child: Padding(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 10,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  BookCover(
-                                                    url: item.imagemUrl,
-                                                    width: 36,
-                                                    height: 52,
-                                                    borderRadius: 8,
-                                                  ),
-                                                  const SizedBox(width: 12),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          item.titulo,
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: const TextStyle(
-                                                            fontWeight: FontWeight.w800,
-                                                            fontSize: 14,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 2),
-                                                        Text(
-                                                          [
-                                                            item.autor,
-                                                            if (item.ano != null) '${item.ano}',
-                                                            if (item.isbn != null)
-                                                              'ISBN ${item.isbn}',
-                                                          ].join(' · '),
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow.ellipsis,
-                                                          style: const TextStyle(
-                                                            color: AppTheme.muted,
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  const Icon(
-                                                    Icons.north_west_rounded,
-                                                    size: 18,
-                                                    color: AppTheme.primary,
-                                                  ),
-                                                ],
-                                              ),
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _lookupController,
+                                  decoration: InputDecoration(
+                                    hintText: 'ex: O Alienista, Machado de Assis, 978…',
+                                    prefixIcon: const Icon(Icons.search_rounded),
+                                    suffixIcon: _lookupLoading
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(12),
+                                            child: SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
                                             ),
-                                          );
-                                        },
+                                          )
+                                        : _lookupController.text.isNotEmpty
+                                            ? IconButton(
+                                                icon: const Icon(Icons.clear_rounded),
+                                                onPressed: () => _lookupController.clear(),
+                                              )
+                                            : null,
+                                  ),
+                                ),
+                                if (_lookupError != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _lookupError!,
+                                    style: const TextStyle(color: AppTheme.error, fontSize: 13),
+                                  ),
+                                ],
+                                if (_lookupResults.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Material(
+                                    color: AppTheme.background,
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: _lookupResults.length,
+                                      separatorBuilder: (_, _) => Divider(
+                                        height: 1,
+                                        color: Colors.black.withValues(alpha: 0.06),
                                       ),
-                                    ),
-                                  ],
-                                  if (_openLibraryCoverId != null &&
-                                      _coverPreviewUrl != null) ...[
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        BookCover(
-                                          url: _coverPreviewUrl,
-                                          width: 48,
-                                          height: 68,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            'Capa da Open Library (será baixada ao publicar)',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.muted.withValues(alpha: 0.9),
+                                      itemBuilder: (context, i) {
+                                        final item = _lookupResults[i];
+                                        return InkWell(
+                                          onTap: () => widget.isEditing
+                                              ? _applyCoverOnly(item)
+                                              : _applyLookup(item),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                BookCover(
+                                                  url: item.imagemUrl,
+                                                  width: 36,
+                                                  height: 52,
+                                                  borderRadius: 8,
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        item.titulo,
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.w800,
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        [
+                                                          item.autor,
+                                                          if (item.ano != null) '${item.ano}',
+                                                          if (item.isbn != null)
+                                                            'ISBN ${item.isbn}',
+                                                        ].join(' · '),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(
+                                                          color: AppTheme.muted,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  widget.isEditing
+                                                      ? Icons.image_rounded
+                                                      : Icons.north_west_rounded,
+                                                  size: 18,
+                                                  color: AppTheme.primary,
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        );
+                                      },
                                     ),
-                                  ],
+                                  ),
                                 ],
-                              ),
-                            ],
+                                if (_openLibraryCoverId != null &&
+                                    _coverPreviewUrl != null) ...[
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      BookCover(
+                                        url: _coverPreviewUrl,
+                                        width: 48,
+                                        height: 68,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          widget.isEditing
+                                              ? 'Nova capa selecionada (será aplicada ao salvar)'
+                                              : 'Capa da Open Library (será baixada ao publicar)',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.muted.withValues(alpha: 0.9),
+                                          ),
+                                        ),
+                                      ),
+                                      if (widget.isEditing)
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.close_rounded,
+                                            size: 18,
+                                            color: AppTheme.muted,
+                                          ),
+                                          tooltip: 'Remover seleção',
+                                          onPressed: () => setState(() {
+                                            _coverPreviewUrl = widget.book?.imagemUrl;
+                                            _openLibraryCoverId = null;
+                                          }),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
                             const SizedBox(height: 12),
                             _FormSection(
                               title: 'Obra',
@@ -651,9 +901,13 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                             hintText: '0,00',
                                             prefixIcon: Icon(Icons.attach_money_rounded),
                                           ),
-                                          validator: (v) => v == null || v.trim().isEmpty
-                                              ? 'Obrigatório'
-                                              : null,
+                                          validator: (v) {
+                                            if (v == null || v.trim().isEmpty) return null;
+                                            final value = double.tryParse(v.trim().replaceAll(',', '.'));
+                                            return value == null || value < 0
+                                                ? 'Valor inválido'
+                                                : null;
+                                          },
                                         ),
                                       ),
                                     ),

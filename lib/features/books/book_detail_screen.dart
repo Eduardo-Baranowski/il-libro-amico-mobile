@@ -591,7 +591,6 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       const SizedBox(width: 8),
                       Row(
                         children: List.generate(5, (index) {
-                          final starVal = index + 1;
                           final isHalf = (avgRating - index) > 0.25 && (avgRating - index) < 0.75;
                           final isFull = (avgRating - index) >= 0.75;
                           return Icon(
@@ -638,23 +637,31 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       // Purchase / Cart icon button
                       IconButton(
                         onPressed: () {
-                          if (book.estoque > 0) {
-                            ref.read(cartProvider.notifier).addBook(book);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('"${book.titulo}" adicionado ao carrinho!'),
-                                behavior: SnackBarBehavior.floating,
-                                action: SnackBarAction(
-                                  label: 'VER CARRINHO',
-                                  onPressed: () => context.push('/carrinho'),
-                                ),
-                              ),
-                            );
-                          } else {
+                          final price = double.tryParse(book.preco) ?? 0.0;
+                          if (book.estoque <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Livro esgotado.')),
                             );
+                            return;
                           }
+                          if (price <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Este livro não está disponível para venda.')),
+                            );
+                            return;
+                          }
+
+                          ref.read(cartProvider.notifier).addBook(book);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('"${book.titulo}" adicionado ao carrinho!'),
+                              behavior: SnackBarBehavior.floating,
+                              action: SnackBarAction(
+                                label: 'VER CARRINHO',
+                                onPressed: () => context.push('/carrinho'),
+                              ),
+                            ),
+                          );
                         },
                         icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
                         style: IconButton.styleFrom(
@@ -925,7 +932,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _reviews.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
                         final r = _reviews[i];
                         return BibCard(

@@ -45,10 +45,12 @@ class AdminRepository {
     );
   }
 
-  Future<PaginatedResponse<AdminBook>> listBooks({int page = 1}) {
+  Future<PaginatedResponse<AdminBook>> listBooks({int page = 1, String? search}) {
+    final query = {'page': '$page'};
+    if (search != null && search.isNotEmpty) query['search'] = search;
     return _api.get(
       '/admin/books',
-      query: {'page': '$page'},
+      query: query,
       parser: (data) {
         final map = data as Map<String, dynamic>;
         return PaginatedResponse(

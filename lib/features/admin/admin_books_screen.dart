@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +17,9 @@ class AdminBooksScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
-  late PageController _pageController;
+  late ScrollController _scrollController;
+  late TextEditingController _searchController;
+  Timer? _debounce;
   int _currentPage = 1;
   bool _loading = false;
   bool _loadingMore = false;
@@ -26,14 +29,32 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _scrollController = ScrollController()..addListener(_onScroll);
+    _searchController = TextEditingController();
     _load(1);
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _scrollController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _load(1);
+    });
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (!_loading && !_loadingMore && _response != null && _currentPage < _response!.pages) {
+        _load(_currentPage + 1);
+      }
+    }
   }
 
   Future<void> _load(int page) async {
@@ -44,10 +65,22 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
     }
 
     try {
-      final response = await ref.read(adminRepositoryProvider).listBooks(page: page);
+      final response = await ref.read(adminRepositoryProvider).listBooks(
+        page: page,
+        search: _searchController.text,
+      );
       if (mounted) {
         setState(() {
-          _response = response;
+          if (page == 1 || _response == null) {
+            _response = response;
+          } else {
+            _response = PaginatedResponse<AdminBook>(
+              items: [..._response!.items, ...response.items],
+              total: response.total,
+              page: response.page,
+              pages: response.pages,
+            );
+          }
           _currentPage = page;
           _error = null;
         });
@@ -122,6 +155,30 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
           color: Colors.white,
           onPressed: () => context.pop(),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Pesquisar por título ou autor...',
+                hintStyle: TextStyle(color: Colors.white.withAlpha(180)),
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                filled: true,
+                fillColor: Colors.white.withAlpha(40),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+              ),
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+          ),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -156,6 +213,7 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
                   : RefreshIndicator(
                       onRefresh: () => _load(1),
                       child: ListView.builder(
+                        controller: _scrollController,
                         itemCount: _response!.items.length + (_loadingMore ? 1 : 0) + 1,
                         itemBuilder: (ctx, i) {
                           // Pagination info at top

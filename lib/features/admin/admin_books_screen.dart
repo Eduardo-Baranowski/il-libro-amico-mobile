@@ -180,6 +180,16 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final res = await context.push('/admin/livros/novo');
+          if (res == true) {
+            _load(1);
+          }
+        },
+        backgroundColor: AppTheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

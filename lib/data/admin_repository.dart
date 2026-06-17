@@ -80,4 +80,63 @@ class AdminRepository {
   Future<void> refreshMetrics() async {
     await _api.post('/admin/refresh-metrics');
   }
+
+  Future<List<Editora>> listEditoras({String? search}) {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    return _api.get(
+      '/admin/editoras',
+      query: query,
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(Editora.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<int> createEditora({
+    required String nome,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final body = <String, String>{'nome': nome};
+
+    final res = await _api.postMultipart(
+      '/admin/editoras',
+      fields: body,
+      file: imageFile,
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return res['id'] as int? ?? 0;
+  }
+
+  Future<int> createBook({
+    required int editoraId,
+    required String titulo,
+    required String autor,
+    int? paginas,
+    String? genero,
+    String? descricao,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+    int? openLibraryCoverId,
+  }) async {
+    final body = <String, String>{
+      'editora_id': editoraId.toString(),
+      'titulo': titulo,
+      'autor': autor,
+    };
+    if (paginas != null && paginas > 0) body['paginas'] = paginas.toString();
+    if (genero != null) body['genero'] = genero;
+    if (descricao != null) body['descricao'] = descricao;
+    if (openLibraryCoverId != null) {
+      body['open_library_cover_id'] = openLibraryCoverId.toString();
+    }
+
+    final res = await _api.postMultipart(
+      '/admin/books',
+      fields: body,
+      file: imageFile,
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return res['id'] as int? ?? 0;
+  }
 }

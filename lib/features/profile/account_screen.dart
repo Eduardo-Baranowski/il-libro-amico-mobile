@@ -158,6 +158,11 @@ class AccountScreen extends ConsumerWidget {
                 title: 'Moderação de Livros',
                 onTap: () => context.push('/admin/livros'),
               ),
+              _MenuTile(
+                icon: Icons.business_rounded,
+                title: 'Editoras',
+                onTap: () => context.push('/admin/editoras'),
+              ),
             ],
           ),
         ],

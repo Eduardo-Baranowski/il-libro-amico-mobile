@@ -1,5 +1,26 @@
 import 'user_role.dart';
 
+class Editora {
+  Editora({
+    required this.id,
+    required this.nome,
+    this.imagemUrl,
+    required this.criadoEm,
+  });
+
+  final int id;
+  final String nome;
+  final String? imagemUrl;
+  final String criadoEm;
+
+  factory Editora.fromJson(Map<String, dynamic> json) => Editora(
+        id: json['id'] as int,
+        nome: json['nome'] as String? ?? '',
+        imagemUrl: json['imagem_url'] as String?,
+        criadoEm: json['criado_em'] as String? ?? '',
+      );
+}
+
 class AdminUser {
   AdminUser({
     required this.id,
@@ -260,7 +281,8 @@ class AdminBook {
     required this.titulo,
     required this.autor,
     required this.editorNome,
-    required this.editorId,
+    this.editorId,
+    this.editoraId,
     required this.preco,
     required this.estoque,
     this.genero,
@@ -271,7 +293,8 @@ class AdminBook {
   final String titulo;
   final String autor;
   final String editorNome;
-  final int editorId;
+  final int? editorId;
+  final int? editoraId;
   final String preco;
   final int estoque;
   final String? genero;
@@ -282,7 +305,8 @@ class AdminBook {
         titulo: json['titulo'] as String? ?? '',
         autor: json['autor'] as String? ?? '',
         editorNome: json['editor_nome'] as String? ?? '',
-        editorId: json['editor_id'] as int,
+        editorId: json['editor_id'] as int?,
+        editoraId: json['editora_id'] as int?,
         preco: json['preco']?.toString() ?? '0',
         estoque: json['estoque'] as int? ?? 0,
         genero: json['genero'] as String?,

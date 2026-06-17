@@ -7,6 +7,8 @@ import '../core/models/admin_editor_models.dart';
 import '../core/models/models.dart';
 import '../core/models/user_role.dart';
 import '../features/admin/admin_books_screen.dart';
+import '../features/admin/admin_editoras_screen.dart';
+import '../features/admin/admin_book_form_screen.dart';
 import '../features/admin/admin_reports_screen.dart';
 import '../features/admin/admin_users_screen.dart';
 import '../features/auth/login_screen.dart';
@@ -263,6 +265,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/livros',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AdminBooksScreen(),
+      ),
+      GoRoute(
+        path: '/admin/livros/novo',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AdminBookFormScreen(),
+      ),
+      GoRoute(
+        path: '/admin/editoras',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AdminEditorasScreen(),
       ),
       GoRoute(
         path: '/editor/livro/novo',

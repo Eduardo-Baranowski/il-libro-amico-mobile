@@ -14,9 +14,12 @@ class AdminRepository {
 
   final ApiClient _api;
 
-  Future<List<AdminUser>> listUsers() {
+  Future<List<AdminUser>> listUsers({String? search}) {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
     return _api.get(
       '/admin/users',
+      query: query,
       parser: (data) => (data as List)
           .whereType<Map<String, dynamic>>()
           .map(AdminUser.fromJson)
@@ -64,6 +67,10 @@ class AdminRepository {
         );
       },
     );
+  }
+
+  Future<void> deleteUser(int userId) async {
+    await _api.delete('/admin/users/$userId');
   }
 
   Future<void> deleteBook(int bookId) async {

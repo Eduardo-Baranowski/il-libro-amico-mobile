@@ -13,10 +13,10 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   final List<String> _images = [
-    'assets/images/splash/kafka.png',
-    'assets/images/splash/dostoevsky.png',
-    'assets/images/splash/tolstoy.png',
-    'assets/images/splash/quintana.png',
+    'assets/images/splash/screen.png',
+    'assets/images/splash/screen1.png',
+    'assets/images/splash/screen3.png',
+    'assets/images/splash/screen4.png',
   ];
 
   int _currentIndex = 0;
@@ -85,8 +85,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    // Parchment background matching the word cloud images
+    const parchment = Color(0xFFFBF9F4);
+    const terracotta = Color(0xFF93452D);
+    const onSurfaceVariant = Color(0xFF55433E);
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: parchment,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -99,11 +104,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             ),
           ),
           
-          // Dark overlay to make text readable
-          Container(
-            color: Colors.black.withValues(alpha: 0.5),
-          ),
-          
           // Loading UI
           SafeArea(
             child: Column(
@@ -113,8 +113,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   padding: const EdgeInsets.symmetric(horizontal: 48.0),
                   child: LinearProgressIndicator(
                     value: _progress,
-                    backgroundColor: Colors.white24,
-                    color: AppTheme.primary,
+                    backgroundColor: onSurfaceVariant.withValues(alpha: 0.15),
+                    color: terracotta,
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(3),
                   ),
@@ -123,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 Text(
                   '${(_progress * 100).toInt()}%',
                   style: AppTheme.labelSans.copyWith(
-                    color: Colors.white70,
+                    color: onSurfaceVariant.withValues(alpha: 0.6),
                     fontSize: 16,
                   ),
                 ),
@@ -136,3 +136,4 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 }
+

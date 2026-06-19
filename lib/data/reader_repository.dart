@@ -248,5 +248,15 @@ class ReaderRepository {
       parser: (res) => Address.fromJson(res as Map<String, dynamic>),
     );
   }
+
+  Future<void> changePassword({
+    required String senhaAtual,
+    required String novaSenha,
+  }) async {
+    await _api.put(
+      '/reader/profile/password',
+      body: {'senha_atual': senhaAtual, 'nova_senha': novaSenha},
+    );
+  }
 }
 

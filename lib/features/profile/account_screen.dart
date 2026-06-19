@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart';
 import 'api_settings_tile.dart';
+import 'change_password_dialog.dart';
 import 'profile_edit_dialog.dart';
 
 class AccountScreen extends ConsumerWidget {
@@ -185,6 +186,19 @@ class AccountScreen extends ConsumerWidget {
             ],
           ),
         ],
+        const SizedBox(height: 16),
+        _MenuSection(
+          children: [
+            _MenuTile(
+              icon: Icons.lock_outline_rounded,
+              title: 'Alterar senha',
+              onTap: () => showDialog(
+                context: context,
+                builder: (_) => const ChangePasswordDialog(),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         const ApiSettingsCard(),
         const SizedBox(height: 20),

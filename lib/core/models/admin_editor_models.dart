@@ -313,3 +313,48 @@ class AdminBook {
         dataCadastro: json['data_cadastro'] as String?,
       );
 }
+
+class AdminBookDetail {
+  AdminBookDetail({
+    required this.id,
+    required this.titulo,
+    required this.autor,
+    required this.editorNome,
+    this.editorId,
+    this.editoraId,
+    required this.preco,
+    required this.estoque,
+    this.genero,
+    this.descricao,
+    this.imagemUrl,
+    this.paginas = 0,
+  });
+
+  final int id;
+  final String titulo;
+  final String autor;
+  final String editorNome;
+  final int? editorId;
+  final int? editoraId;
+  final String preco;
+  final int estoque;
+  final String? genero;
+  final String? descricao;
+  final String? imagemUrl;
+  final int paginas;
+
+  factory AdminBookDetail.fromJson(Map<String, dynamic> json) => AdminBookDetail(
+        id: json['id'] as int,
+        titulo: json['titulo'] as String? ?? '',
+        autor: json['autor'] as String? ?? '',
+        editorNome: json['editor_nome'] as String? ?? '',
+        editorId: json['editor_id'] as int?,
+        editoraId: json['editora_id'] as int?,
+        preco: json['preco']?.toString() ?? '0',
+        estoque: json['estoque'] as int? ?? 0,
+        genero: json['genero'] as String?,
+        descricao: json['descricao'] as String?,
+        imagemUrl: json['imagem_url'] as String?,
+        paginas: json['paginas'] as int? ?? 0,
+      );
+}

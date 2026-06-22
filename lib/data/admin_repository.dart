@@ -77,6 +77,41 @@ class AdminRepository {
     await _api.delete('/admin/books/$bookId');
   }
 
+  Future<AdminBookDetail> getBook(int bookId) {
+    return _api.get(
+      '/admin/books/$bookId',
+      parser: (data) => AdminBookDetail.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<void> updateBook({
+    required int id,
+    int? editoraId,
+    String? titulo,
+    String? autor,
+    String? preco,
+    String? estoque,
+    String? genero,
+    String? descricao,
+    int? paginas,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+    int? openLibraryCoverId,
+  }) async {
+    final fields = <String, String>{};
+    if (editoraId != null) fields['editora_id'] = editoraId.toString();
+    if (titulo != null) fields['titulo'] = titulo;
+    if (autor != null) fields['autor'] = autor;
+    if (preco != null) fields['preco'] = preco;
+    if (estoque != null) fields['estoque'] = estoque;
+    if (genero != null) fields['genero'] = genero;
+    if (descricao != null) fields['descricao'] = descricao;
+    if (paginas != null) fields['paginas'] = paginas.toString();
+    if (openLibraryCoverId != null) {
+      fields['open_library_cover_id'] = openLibraryCoverId.toString();
+    }
+    await _api.putMultipart('/admin/books/$id', fields: fields, file: imageFile);
+  }
+
   Future<void> refreshMetrics() async {
     await _api.post('/admin/refresh-metrics');
   }

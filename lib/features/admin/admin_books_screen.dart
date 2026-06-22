@@ -99,6 +99,13 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
     }
   }
 
+  Future<void> _editBook(AdminBook book) async {
+    final res = await context.push('/admin/livros/${book.id}');
+    if (res == true) {
+      _load(1);
+    }
+  }
+
   Future<void> _deleteBook(AdminBook book) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -265,9 +272,12 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
 
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
+                            child: InkWell(
+                              onTap: () => _editBook(book),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
@@ -342,6 +352,7 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
                                   ),
                                 ],
                               ),
+                            ),
                             ),
                           );
                         },

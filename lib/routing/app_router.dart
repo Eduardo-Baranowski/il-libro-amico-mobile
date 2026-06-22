@@ -272,6 +272,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AdminBookFormScreen(),
       ),
       GoRoute(
+        path: '/admin/livros/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AdminBookFormScreen(bookId: id);
+        },
+      ),
+      GoRoute(
         path: '/admin/editoras',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AdminEditorasScreen(),

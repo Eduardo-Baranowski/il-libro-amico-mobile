@@ -29,7 +29,11 @@ const _generos = [
 ];
 
 class AdminBookFormScreen extends ConsumerStatefulWidget {
-  const AdminBookFormScreen({super.key});
+  const AdminBookFormScreen({super.key, this.bookId});
+
+  final int? bookId;
+
+  bool get isEditing => bookId != null;
 
   @override
   ConsumerState<AdminBookFormScreen> createState() => _AdminBookFormScreenState();
@@ -41,8 +45,12 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
   late final TextEditingController _autor;
   late final TextEditingController _descricao;
   late final TextEditingController _paginas;
+  late final TextEditingController _preco;
+  late final TextEditingController _estoque;
   String _genero = 'Romance';
   bool _saving = false;
+  bool _loading = false;
+  String? _loadError;
 
   final _lookupController = TextEditingController();
   Timer? _lookupDebounce;
@@ -63,14 +71,56 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
     _autor = TextEditingController();
     _descricao = TextEditingController();
     _paginas = TextEditingController();
+    _preco = TextEditingController();
+    _estoque = TextEditingController();
 
-    for (final c in [_titulo, _autor, _descricao, _paginas]) {
+    for (final c in [_titulo, _autor, _descricao, _paginas, _preco, _estoque]) {
       c.addListener(() {
         if (mounted) setState(() {});
       });
     }
     _lookupController.addListener(_onLookupQueryChanged);
     _loadEditoras();
+    if (widget.isEditing) {
+      _loadBook();
+    }
+  }
+
+  Future<void> _loadBook() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final book = await ref.read(adminRepositoryProvider).getBook(widget.bookId!);
+      if (!mounted) return;
+      setState(() {
+        _titulo.text = book.titulo;
+        _autor.text = book.autor;
+        _descricao.text = book.descricao ?? '';
+        _paginas.text = book.paginas > 0 ? '${book.paginas}' : '';
+        _preco.text = book.preco;
+        _estoque.text = '${book.estoque}';
+        if (book.genero != null && _generos.contains(book.genero)) {
+          _genero = book.genero!;
+        }
+        _coverPreviewUrl = book.imagemUrl;
+        if (book.editoraId != null) {
+          _selectedEditoraId = book.editoraId;
+        }
+        _loading = false;
+      });
+    } on ApiException catch (e) {
+      if (mounted) setState(() {
+        _loadError = e.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        _loadError = 'Erro ao carregar livro.';
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -81,6 +131,8 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
     _autor.dispose();
     _descricao.dispose();
     _paginas.dispose();
+    _preco.dispose();
+    _estoque.dispose();
     super.dispose();
   }
 
@@ -90,7 +142,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
       if (mounted) {
         setState(() {
           _editoras = editoras;
-          if (_editoras.isNotEmpty) {
+          if (!widget.isEditing && _editoras.isNotEmpty) {
             _selectedEditoraId = _editoras.first.id;
           }
         });
@@ -277,20 +329,38 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
           ? (fieldName: 'imagem', filePath: _pickedCoverFile!.path, mimeType: 'image/jpeg')
           : null;
 
-      await repo.createBook(
-        editoraId: _selectedEditoraId!,
-        titulo: _titulo.text.trim(),
-        autor: _autor.text.trim(),
-        genero: _genero,
-        descricao: _descricao.text.trim().isEmpty ? null : _descricao.text.trim(),
-        openLibraryCoverId: imageFile == null ? _openLibraryCoverId : null,
-        imageFile: imageFile,
-        paginas: pInt,
-      );
+      if (widget.isEditing) {
+        await repo.updateBook(
+          id: widget.bookId!,
+          editoraId: _selectedEditoraId!,
+          titulo: _titulo.text.trim(),
+          autor: _autor.text.trim(),
+          preco: _preco.text.trim(),
+          estoque: _estoque.text.trim(),
+          genero: _genero,
+          descricao: _descricao.text.trim(),
+          paginas: pInt,
+          imageFile: imageFile,
+          openLibraryCoverId: imageFile == null ? _openLibraryCoverId : null,
+        );
+      } else {
+        await repo.createBook(
+          editoraId: _selectedEditoraId!,
+          titulo: _titulo.text.trim(),
+          autor: _autor.text.trim(),
+          genero: _genero,
+          descricao: _descricao.text.trim().isEmpty ? null : _descricao.text.trim(),
+          openLibraryCoverId: imageFile == null ? _openLibraryCoverId : null,
+          imageFile: imageFile,
+          paginas: pInt,
+        );
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Livro cadastrado com sucesso!')),
+          SnackBar(
+            content: Text(widget.isEditing ? 'Livro atualizado com sucesso!' : 'Livro cadastrado com sucesso!'),
+          ),
         );
         context.pop(true);
       }
@@ -331,6 +401,45 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Editar livro'),
+          backgroundColor: AppTheme.primary,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_loadError != null) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Editar livro'),
+          backgroundColor: AppTheme.primary,
+          foregroundColor: Colors.white,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.error),
+              const SizedBox(height: 16),
+              Text(_loadError!),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _loadBook,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final titlePreview = _titulo.text.trim().isEmpty ? 'Sem título' : _titulo.text.trim();
     final authorPreview = _autor.text.trim().isEmpty ? 'Autor' : _autor.text.trim();
 
@@ -349,9 +458,9 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                     stretch: true,
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
-                    title: const Text(
-                      'Novo livro (Admin)',
-                      style: TextStyle(
+                    title: Text(
+                      widget.isEditing ? 'Editar livro' : 'Novo livro (Admin)',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
                         color: Colors.white,
@@ -403,7 +512,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Hero(
-                                tag: 'book-cover-new',
+                                tag: widget.isEditing ? 'book-cover-${widget.bookId}' : 'book-cover-new',
                                 child: Material(
                                   color: Colors.transparent,
                                   child: GestureDetector(
@@ -509,6 +618,10 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                             Icons.menu_book_outlined,
                                             '${_paginas.text.trim()} pág.',
                                           ),
+                                        if (widget.isEditing && _preco.text.trim().isNotEmpty)
+                                          _previewChip(Icons.attach_money_rounded, 'R\$ ${_preco.text.trim()}'),
+                                        if (widget.isEditing && _estoque.text.trim().isNotEmpty)
+                                          _previewChip(Icons.inventory_2_outlined, 'Est. ${_estoque.text.trim()}'),
                                       ],
                                     ),
                                   ],
@@ -702,6 +815,37 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                     items: _generos.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
                                     onChanged: (v) => setState(() => _genero = v ?? 'Romance'),
                                   ),
+                                  if (widget.isEditing) ...[
+                                    const SizedBox(height: 14),
+                                    TextFormField(
+                                      controller: _preco,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: const InputDecoration(
+                                        labelText: 'Preço (R\$)',
+                                        prefixIcon: Icon(Icons.attach_money_rounded),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.trim().isEmpty) return 'Informe o preço';
+                                        final n = double.tryParse(v.trim().replaceAll(',', '.'));
+                                        if (n == null || n < 0) return 'Preço inválido';
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextFormField(
+                                      controller: _estoque,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      decoration: const InputDecoration(
+                                        labelText: 'Estoque',
+                                        prefixIcon: Icon(Icons.inventory_2_outlined),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.trim().isEmpty) return 'Informe o estoque';
+                                        return null;
+                                      },
+                                    ),
+                                  ],
                                   const SizedBox(height: 14),
                                   TextFormField(
                                     controller: _descricao,
@@ -720,7 +864,11 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               child: Text(
-                                _saving ? 'Salvando…' : 'Cadastrar Livro',
+                                _saving
+                                    ? 'Salvando…'
+                                    : widget.isEditing
+                                        ? 'Salvar alterações'
+                                        : 'Cadastrar Livro',
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),

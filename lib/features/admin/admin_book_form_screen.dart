@@ -792,12 +792,16 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _titulo,
+                                    textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     decoration: const InputDecoration(labelText: 'Título', prefixIcon: Icon(Icons.title_rounded)),
                                     validator: (v) => v == null || v.trim().isEmpty ? 'Informe o título' : null,
                                   ),
                                   const SizedBox(height: 14),
                                   TextFormField(
                                     controller: _autor,
+                                    textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     decoration: const InputDecoration(labelText: 'Autor', prefixIcon: Icon(Icons.person_outline_rounded)),
                                     validator: (v) => v == null || v.trim().isEmpty ? 'Informe o autor' : null,
                                   ),
@@ -806,6 +810,8 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                     controller: _paginas,
                                     keyboardType: TextInputType.number,
                                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                    textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     decoration: const InputDecoration(labelText: 'Páginas', prefixIcon: Icon(Icons.numbers_rounded)),
                                   ),
                                   const SizedBox(height: 14),
@@ -820,6 +826,8 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                     TextFormField(
                                       controller: _preco,
                                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      textInputAction: TextInputAction.next,
+                                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                       decoration: const InputDecoration(
                                         labelText: 'Preço (R\$)',
                                         prefixIcon: Icon(Icons.attach_money_rounded),
@@ -836,6 +844,8 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                       controller: _estoque,
                                       keyboardType: TextInputType.number,
                                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      textInputAction: TextInputAction.next,
+                                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                       decoration: const InputDecoration(
                                         labelText: 'Estoque',
                                         prefixIcon: Icon(Icons.inventory_2_outlined),
@@ -851,6 +861,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                     controller: _descricao,
                                     minLines: 3,
                                     maxLines: 5,
+                                    textInputAction: TextInputAction.done,
                                     decoration: const InputDecoration(labelText: 'Sinopse/Descrição', alignLabelWithHint: true),
                                   ),
                                 ],

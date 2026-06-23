@@ -62,6 +62,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _nome,
                 textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 decoration: const InputDecoration(labelText: 'Nome'),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o nome' : null,
@@ -71,6 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (v) =>
                     v == null || !v.contains('@') ? 'Email inválido' : null,

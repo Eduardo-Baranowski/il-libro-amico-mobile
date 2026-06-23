@@ -16,6 +16,8 @@ import '../features/auth/register_screen.dart';
 import '../features/auth/register_photo_screen.dart';
 import '../features/books/book_detail_screen.dart';
 import '../features/books/books_screen.dart';
+import '../features/books/autor_screen.dart';
+import '../features/books/reader_book_register_screen.dart';
 import '../features/books/editor_public_screen.dart';
 import '../features/cart/cart_screen.dart';
 import '../features/cart/checkout_screen.dart';
@@ -160,6 +162,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = int.parse(state.pathParameters['id']!);
           return BookDetailScreen(bookId: id);
+        },
+      ),
+      GoRoute(
+        path: '/livros/cadastrar',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ReaderBookRegisterScreen(),
+      ),
+      GoRoute(
+        path: '/livros/:id/editar',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return ReaderBookRegisterScreen(bookId: id);
+        },
+      ),
+      GoRoute(
+        path: '/autor/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AutorScreen(autorId: id);
         },
       ),
       GoRoute(

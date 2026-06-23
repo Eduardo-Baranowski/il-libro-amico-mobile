@@ -765,6 +765,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                     controller: _titulo,
                                     textCapitalization: TextCapitalization.sentences,
                                     textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     decoration: const InputDecoration(
                                       hintText: 'ex: O Alienista',
                                       prefixIcon: Icon(Icons.title_rounded),
@@ -780,6 +781,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                     controller: _autor,
                                     textCapitalization: TextCapitalization.words,
                                     textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     decoration: const InputDecoration(
                                       hintText: 'Nome do autor',
                                       prefixIcon: Icon(Icons.person_outline_rounded),
@@ -795,6 +797,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                     controller: _paginas,
                                     keyboardType: TextInputType.number,
                                     textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
@@ -892,6 +895,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                             decimal: true,
                                           ),
                                           textInputAction: TextInputAction.next,
+                                          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                           inputFormatters: [
                                             FilteringTextInputFormatter.allow(
                                               RegExp(r'[\d.,]'),
@@ -919,6 +923,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                           controller: _estoque,
                                           keyboardType: TextInputType.number,
                                           textInputAction: TextInputAction.next,
+                                          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                           inputFormatters: [
                                             FilteringTextInputFormatter.digitsOnly,
                                           ],

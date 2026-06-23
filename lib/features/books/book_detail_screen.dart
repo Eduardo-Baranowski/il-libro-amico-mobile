@@ -463,41 +463,59 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 8,
                   right: 16,
-                  child: Stack(
-                    clipBehavior: Clip.none,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.black.withValues(alpha: 0.35),
-                        child: IconButton(
-                          icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-                          onPressed: () => context.push('/carrinho'),
-                        ),
-                      ),
-                      if (cartItems.isNotEmpty)
-                        Positioned(
-                          right: -2,
-                          top: -2,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppTheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              '${cartItems.length}',
-                              style: AppTheme.captionSans.copyWith(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                      if (book.canEdit)
+                        CircleAvatar(
+                          backgroundColor: Colors.black.withValues(alpha: 0.35),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                            tooltip: 'Editar livro',
+                            onPressed: () async {
+                              final res = await context.push('/livros/${book.id}/editar');
+                              if (res == true && mounted) _load();
+                            },
                           ),
                         ),
+                      if (book.canEdit) const SizedBox(width: 8),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.black.withValues(alpha: 0.35),
+                            child: IconButton(
+                              icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                              onPressed: () => context.push('/carrinho'),
+                            ),
+                          ),
+                          if (cartItems.isNotEmpty)
+                            Positioned(
+                              right: -2,
+                              top: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '${cartItems.length}',
+                                  style: AppTheme.captionSans.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -560,14 +578,44 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                     style: AppTheme.displaySerif.copyWith(fontSize: 24, height: 1.25),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    book.autor,
-                    style: AppTheme.bodySans.copyWith(
-                      color: AppTheme.onSurfaceVariant,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                  if (book.autores.isNotEmpty)
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        for (var i = 0; i < book.autores.length; i++) ...[
+                          if (i > 0)
+                            Text(
+                              ', ',
+                              style: AppTheme.bodySans.copyWith(
+                                color: AppTheme.onSurfaceVariant,
+                                fontSize: 16,
+                              ),
+                            ),
+                          InkWell(
+                            onTap: () => context.push('/autor/${book.autores[i].id}'),
+                            child: Text(
+                              book.autores[i].nome,
+                              style: AppTheme.bodySans.copyWith(
+                                color: AppTheme.primary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppTheme.primary.withValues(alpha: 0.4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    )
+                  else
+                    Text(
+                      book.autor,
+                      style: AppTheme.bodySans.copyWith(
+                        color: AppTheme.onSurfaceVariant,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 12),
 
                   // Rating Row

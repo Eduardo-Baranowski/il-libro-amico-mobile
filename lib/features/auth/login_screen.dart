@@ -60,6 +60,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (v) =>
                     v == null || !v.contains('@') ? 'Email inválido' : null,

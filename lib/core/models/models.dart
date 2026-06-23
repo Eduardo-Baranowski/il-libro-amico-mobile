@@ -1,6 +1,8 @@
 import 'user_role.dart';
+import 'admin_editor_models.dart';
 
 export 'user_role.dart';
+export 'admin_editor_models.dart';
 
 class PaginatedResponse<T> {
   PaginatedResponse({
@@ -123,10 +125,18 @@ class BookDetails extends Book {
     super.paginas = 0,
     this.editoraImagemUrl,
     this.myReading,
+    this.autores = const [],
+    this.isbn,
+    this.canEdit = false,
+    this.submittedById,
   });
 
   final String? editoraImagemUrl;
   final MyReadingStatus? myReading;
+  final List<AutorSummary> autores;
+  final String? isbn;
+  final bool canEdit;
+  final int? submittedById;
 
   factory BookDetails.fromJson(Map<String, dynamic> json) {
     final reading = json['my_reading'];
@@ -145,11 +155,111 @@ class BookDetails extends Book {
       condicao: json['condicao'] as String? ?? 'novo',
       paginas: json['paginas'] as int? ?? 0,
       editoraImagemUrl: json['editora_imagem_url'] as String?,
+      isbn: json['isbn'] as String?,
+      canEdit: json['can_edit'] as bool? ?? false,
+      submittedById: json['submitted_by_id'] as int?,
+      autores: (json['autores'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(AutorSummary.fromJson)
+          .toList(),
       myReading: reading is Map<String, dynamic>
           ? MyReadingStatus.fromJson(reading)
           : null,
     );
   }
+}
+
+class AutorSummary {
+  AutorSummary({required this.id, required this.nome});
+
+  final int id;
+  final String nome;
+
+  factory AutorSummary.fromJson(Map<String, dynamic> json) => AutorSummary(
+        id: json['id'] as int,
+        nome: json['nome'] as String? ?? '',
+      );
+}
+
+class AutorProfile {
+  AutorProfile({
+    required this.id,
+    required this.nome,
+    required this.slug,
+    this.bio,
+    this.imagemUrl,
+    required this.totalLivros,
+    required this.totalLeituras,
+    required this.livros,
+  });
+
+  final int id;
+  final String nome;
+  final String slug;
+  final String? bio;
+  final String? imagemUrl;
+  final int totalLivros;
+  final int totalLeituras;
+  final List<AutorBookHit> livros;
+
+  factory AutorProfile.fromJson(Map<String, dynamic> json) => AutorProfile(
+        id: json['id'] as int,
+        nome: json['nome'] as String? ?? '',
+        slug: json['slug'] as String? ?? '',
+        bio: json['bio'] as String?,
+        imagemUrl: json['imagem_url'] as String?,
+        totalLivros: json['total_livros'] as int? ?? 0,
+        totalLeituras: json['total_leituras'] as int? ?? 0,
+        livros: (json['livros'] as List? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(AutorBookHit.fromJson)
+            .toList(),
+      );
+}
+
+class AutorBookHit {
+  AutorBookHit({
+    required this.id,
+    required this.titulo,
+    required this.autor,
+    this.genero,
+    this.imagemUrl,
+  });
+
+  final int id;
+  final String titulo;
+  final String autor;
+  final String? genero;
+  final String? imagemUrl;
+
+  factory AutorBookHit.fromJson(Map<String, dynamic> json) => AutorBookHit(
+        id: json['id'] as int,
+        titulo: json['titulo'] as String? ?? '',
+        autor: json['autor'] as String? ?? '',
+        genero: json['genero'] as String?,
+        imagemUrl: json['imagem_url'] as String?,
+      );
+}
+
+class BookSubmitResult {
+  BookSubmitResult({
+    required this.id,
+    required this.message,
+    required this.alreadyExists,
+    this.readingId,
+  });
+
+  final int id;
+  final String message;
+  final bool alreadyExists;
+  final int? readingId;
+
+  factory BookSubmitResult.fromJson(Map<String, dynamic> json) => BookSubmitResult(
+        id: json['id'] as int,
+        message: json['message'] as String? ?? '',
+        alreadyExists: json['already_exists'] as bool? ?? false,
+        readingId: json['reading_id'] as int?,
+      );
 }
 
 class MyReadingStatus {

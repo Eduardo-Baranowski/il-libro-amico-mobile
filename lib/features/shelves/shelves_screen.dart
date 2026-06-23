@@ -318,6 +318,16 @@ class _ShelvesScreenState extends ConsumerState<ShelvesScreen> {
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppTheme.marginMobile, 0, AppTheme.marginMobile, 8),
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/livros/cadastrar'),
+                    icon: const Icon(Icons.library_add_outlined, size: 18),
+                    label: const Text('Cadastrar livro no acervo'),
+                  ),
+                ),
+              ),
               // 3. Grid of books
               if (_loading)
                 const SliverFillRemaining(

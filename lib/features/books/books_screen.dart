@@ -107,6 +107,7 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(authProvider).role;
+    final auth = ref.watch(authProvider);
     
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -117,7 +118,14 @@ class _BooksScreenState extends ConsumerState<BooksScreen> {
               icon: const Icon(Icons.add_rounded),
               label: const Text('Vender livro'),
             )
-          : null,
+          : auth.isAuthenticated
+              ? FloatingActionButton.extended(
+                  onPressed: () => context.push('/livros/cadastrar'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  icon: const Icon(Icons.library_add_rounded),
+                  label: const Text('Cadastrar livro'),
+                )
+              : null,
       body: role == UserRole.editor
           ? const EditorCatalogBody()
           : RefreshIndicator(

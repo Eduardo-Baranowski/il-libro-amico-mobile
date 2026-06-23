@@ -258,5 +258,77 @@ class ReaderRepository {
       body: {'senha_atual': senhaAtual, 'nova_senha': novaSenha},
     );
   }
+
+  Future<BookLookupResponse> lookupBooks(String query, {int limit = 8}) {
+    return _api.get(
+      '/reader/books/lookup',
+      query: {'q': query, 'limit': '$limit'},
+      parser: (data) => BookLookupResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<BookSubmitResult> submitBook({
+    required String titulo,
+    required String autor,
+    String? genero,
+    String? descricao,
+    String? isbn,
+    int? paginas,
+    int? openLibraryCoverId,
+    bool addToShelf = true,
+    String shelfStatus = 'quero_ler',
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final fields = <String, String>{
+      'titulo': titulo,
+      'autor': autor,
+      'add_to_shelf': addToShelf.toString(),
+      'shelf_status': shelfStatus,
+      if (genero != null) 'genero': genero,
+      if (descricao != null) 'descricao': descricao,
+      if (isbn != null) 'isbn': isbn,
+      if (paginas != null) 'paginas': paginas.toString(),
+      if (openLibraryCoverId != null) 'open_library_cover_id': openLibraryCoverId.toString(),
+    };
+
+    final res = await _api.postMultipart<Map<String, dynamic>>(
+      '/reader/books',
+      fields: fields,
+      file: imageFile,
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return BookSubmitResult.fromJson(res);
+  }
+
+  Future<AutorProfile> autorProfile(int id) {
+    return _api.get(
+      '/reader/autores/$id',
+      parser: (data) => AutorProfile.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<void> updateBook({
+    required int id,
+    String? titulo,
+    String? autor,
+    String? genero,
+    String? descricao,
+    String? isbn,
+    int? paginas,
+    int? openLibraryCoverId,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final fields = <String, String>{};
+    if (titulo != null) fields['titulo'] = titulo;
+    if (autor != null) fields['autor'] = autor;
+    if (genero != null) fields['genero'] = genero;
+    if (descricao != null) fields['descricao'] = descricao;
+    if (isbn != null) fields['isbn'] = isbn;
+    if (paginas != null) fields['paginas'] = paginas.toString();
+    if (openLibraryCoverId != null) {
+      fields['open_library_cover_id'] = openLibraryCoverId.toString();
+    }
+    await _api.putMultipart('/reader/books/$id', fields: fields, file: imageFile);
+  }
 }
 

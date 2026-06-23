@@ -113,10 +113,40 @@ class BookLookupItem {
 }
 
 class BookLookupResponse {
-  BookLookupResponse({required this.items, required this.fonte});
+  BookLookupResponse({
+    required this.items,
+    this.fonte = 'open_library',
+    this.existingBook,
+  });
 
   final List<BookLookupItem> items;
   final String fonte;
+  final ExistingBookHit? existingBook;
+
+  factory BookLookupResponse.fromJson(Map<String, dynamic> json) => BookLookupResponse(
+        items: (json['items'] as List? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(BookLookupItem.fromJson)
+            .toList(),
+        fonte: json['fonte'] as String? ?? 'open_library',
+        existingBook: json['existing_book'] is Map<String, dynamic>
+            ? ExistingBookHit.fromJson(json['existing_book'] as Map<String, dynamic>)
+            : null,
+      );
+}
+
+class ExistingBookHit {
+  ExistingBookHit({required this.id, required this.titulo, required this.autor});
+
+  final int id;
+  final String titulo;
+  final String autor;
+
+  factory ExistingBookHit.fromJson(Map<String, dynamic> json) => ExistingBookHit(
+        id: json['id'] as int,
+        titulo: json['titulo'] as String? ?? '',
+        autor: json['autor'] as String? ?? '',
+      );
 }
 
 class EditorBook {

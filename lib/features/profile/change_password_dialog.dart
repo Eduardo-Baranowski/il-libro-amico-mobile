@@ -113,6 +113,7 @@ class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
                 controller: _currentController,
                 obscureText: !_showCurrent,
                 textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 decoration: InputDecoration(
                   labelText: 'Senha atual',
                   prefixIcon: const Icon(Icons.lock_rounded, size: 20),
@@ -138,6 +139,7 @@ class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
                 controller: _newController,
                 obscureText: !_showNew,
                 textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 decoration: InputDecoration(
                   labelText: 'Nova senha',
                   prefixIcon: const Icon(Icons.lock_open_rounded, size: 20),

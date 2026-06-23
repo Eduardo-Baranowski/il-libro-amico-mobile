@@ -37,16 +37,7 @@ class EditorRepository {
     return _api.get(
       '/editor/books/lookup',
       query: {'q': q, 'limit': '$limit'},
-      parser: (data) {
-        final map = data as Map<String, dynamic>;
-        return BookLookupResponse(
-          items: (map['items'] as List? ?? [])
-              .whereType<Map<String, dynamic>>()
-              .map(BookLookupItem.fromJson)
-              .toList(),
-          fonte: map['fonte'] as String? ?? 'open_library',
-        );
-      },
+      parser: (data) => BookLookupResponse.fromJson(data as Map<String, dynamic>),
     );
   }
 

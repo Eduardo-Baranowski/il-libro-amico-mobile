@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/auth/auth_notifier.dart';
-import '../core/models/admin_editor_models.dart';
 import '../core/models/models.dart';
-import '../core/models/user_role.dart';
 import '../features/admin/admin_books_screen.dart';
 import '../features/admin/admin_editoras_screen.dart';
 import '../features/admin/admin_book_form_screen.dart';
@@ -34,6 +32,7 @@ import '../features/book_club/book_club_requests_screen.dart';
 import '../features/book_club/book_club_voting_screen.dart';
 import '../features/profile/account_screen.dart';
 import '../features/profile/public_user_screen.dart';
+import '../features/profile/statistics_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/shelves/shelves_screen.dart';
 import '../features/shell/main_shell.dart';
@@ -77,10 +76,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final onboardingCompleted = ref.read(onboardingCompletedProvider);
       final path = state.uri.path;
       final isAuthRoute = path == '/entrar' || path == '/cadastro';
-      final needsAuth = ['/mensagens', '/estante', '/carrinho', '/checkout'].any((p) => path.startsWith(p));
-      final isAdminRoute = path.startsWith('/admin');
-      final isEditorRoute = path.startsWith('/editor/');
-
+      final needsAuth = ['/mensagens', '/estante', '/estatisticas', '/carrinho', '/checkout'].any((p) => path.startsWith(p));
       // Splash screen lida com a própria navegação após terminar a animação
       if (path == '/splash') return null;
 
@@ -155,6 +151,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/buscar',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SearchScreen(),
+      ),
+      GoRoute(
+        path: '/estatisticas',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StatisticsScreen(),
       ),
       GoRoute(
         path: '/livro/:id',
@@ -357,8 +358,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
 class _RouterListenable extends ChangeNotifier {
   _RouterListenable(this._ref) {
-    _ref.listen(authProvider, (_, __) => notifyListeners());
-    _ref.listen(onboardingCompletedProvider, (_, __) => notifyListeners());
+    _ref.listen(authProvider, (_, _) => notifyListeners());
+    _ref.listen(onboardingCompletedProvider, (_, _) => notifyListeners());
   }
 
   final Ref _ref;

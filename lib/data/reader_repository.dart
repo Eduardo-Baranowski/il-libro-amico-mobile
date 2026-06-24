@@ -208,6 +208,16 @@ class ReaderRepository {
     );
   }
 
+  Future<ReaderStatistics> statistics({int? year}) {
+    return _api.get(
+      '/reader/statistics',
+      query: {
+        if (year != null) 'year': '$year',
+      },
+      parser: (data) => ReaderStatistics.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
   /// Uploads a new profile photo. [filePath] is the local file path,
   /// [mimeType] should be e.g. 'image/jpeg' or 'image/png'.
   /// Returns the new [imagem_url] from the server.
@@ -331,4 +341,3 @@ class ReaderRepository {
     await _api.putMultipart('/reader/books/$id', fields: fields, file: imageFile);
   }
 }
-

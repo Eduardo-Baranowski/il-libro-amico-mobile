@@ -10,6 +10,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
 
@@ -36,10 +37,12 @@ class ReaderBookRegisterScreen extends ConsumerStatefulWidget {
   bool get isEditing => bookId != null;
 
   @override
-  ConsumerState<ReaderBookRegisterScreen> createState() => _ReaderBookRegisterScreenState();
+  ConsumerState<ReaderBookRegisterScreen> createState() =>
+      _ReaderBookRegisterScreenState();
 }
 
-class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScreen> {
+class _ReaderBookRegisterScreenState
+    extends ConsumerState<ReaderBookRegisterScreen> {
   _RegisterStep _step = _RegisterStep.isbn;
   final _isbnController = TextEditingController();
   final _tituloController = TextEditingController();
@@ -86,7 +89,9 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
       _error = null;
     });
     try {
-      final book = await ref.read(readerRepositoryProvider).bookDetails(widget.bookId!);
+      final book = await ref
+          .read(readerRepositoryProvider)
+          .bookDetails(widget.bookId!);
       if (!mounted) return;
       setState(() {
         _tituloController.text = book.titulo;
@@ -161,10 +166,19 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Capa do livro', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            const Text(
+              'Capa do livro',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
             ListTile(
-              leading: Icon(Icons.photo_library_rounded, color: AppTheme.primary),
-              title: const Text('Galeria de fotos', style: TextStyle(fontWeight: FontWeight.w700)),
+              leading: Icon(
+                Icons.photo_library_rounded,
+                color: AppTheme.primary,
+              ),
+              title: const Text(
+                'Galeria de fotos',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickCover(ImageSource.gallery);
@@ -172,10 +186,16 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
             ),
             if (_pickedCoverFile != null || _coverPreviewUrl != null)
               ListTile(
-                leading: Icon(Icons.delete_outline_rounded, color: Colors.red.shade600),
+                leading: Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.red.shade600,
+                ),
                 title: Text(
                   'Remover capa',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: Colors.red.shade600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.red.shade600,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -282,14 +302,17 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
     final existing = _lookup?.existingBook;
     if (!widget.isEditing && existing != null) {
       if (_addToShelf) {
-        await ref.read(readerRepositoryProvider).registerReading(
-              livroId: existing.id,
-              status: 'quero_ler',
-            );
+        await ref
+            .read(readerRepositoryProvider)
+            .registerReading(livroId: existing.id, status: 'quero_ler');
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Livro já estava no acervo. Adicionado à sua estante!')),
+          const SnackBar(
+            content: Text(
+              'Livro já estava no acervo. Adicionado à sua estante!',
+            ),
+          ),
         );
         context.pop(existing.id);
       }
@@ -310,7 +333,11 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
 
     final pInt = int.tryParse(_paginasController.text.trim());
     final imageFile = _pickedCoverFile != null
-        ? (fieldName: 'imagem', filePath: _pickedCoverFile!.path, mimeType: 'image/jpeg')
+        ? (
+            fieldName: 'imagem',
+            filePath: _pickedCoverFile!.path,
+            mimeType: 'image/jpeg',
+          )
         : null;
     final openLibraryCoverId = imageFile == null ? _openLibraryCoverId : null;
 
@@ -323,7 +350,9 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
           autor: autor,
           genero: _genero,
           descricao: _descricaoController.text.trim(),
-          isbn: _isbnController.text.trim().isEmpty ? null : _isbnController.text.trim(),
+          isbn: _isbnController.text.trim().isEmpty
+              ? null
+              : _isbnController.text.trim(),
           paginas: pInt,
           imageFile: imageFile,
           openLibraryCoverId: openLibraryCoverId,
@@ -338,17 +367,21 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
           titulo: titulo,
           autor: autor,
           genero: _genero,
-          descricao: _descricaoController.text.trim().isEmpty ? null : _descricaoController.text.trim(),
-          isbn: _isbnController.text.trim().isEmpty ? _selected?.isbn : _isbnController.text.trim(),
+          descricao: _descricaoController.text.trim().isEmpty
+              ? null
+              : _descricaoController.text.trim(),
+          isbn: _isbnController.text.trim().isEmpty
+              ? _selected?.isbn
+              : _isbnController.text.trim(),
           paginas: pInt,
           openLibraryCoverId: openLibraryCoverId,
           addToShelf: _addToShelf,
           imageFile: imageFile,
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.message)));
         context.pop(result.id);
       }
     } on ApiException catch (e) {
@@ -386,8 +419,15 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
               right: -8,
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
-                child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                decoration: const BoxDecoration(
+                  color: AppTheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.camera_alt_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -417,7 +457,9 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
         TextField(
           controller: _isbnController,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9Xx\-]'))],
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9Xx\-]')),
+          ],
           textInputAction: TextInputAction.next,
           onSubmitted: (_) => FocusScope.of(context).nextFocus(),
           decoration: const InputDecoration(labelText: 'ISBN (opcional)'),
@@ -426,7 +468,9 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
         DropdownButtonFormField<String>(
           value: _genero,
           decoration: const InputDecoration(labelText: 'Gênero'),
-          items: _generos.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+          items: _generos
+              .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+              .toList(),
           onChanged: (v) => setState(() => _genero = v ?? 'Romance'),
         ),
         const SizedBox(height: 12),
@@ -444,7 +488,10 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
           minLines: 2,
           maxLines: 4,
           textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(labelText: 'Sinopse (opcional)', alignLabelWithHint: true),
+          decoration: const InputDecoration(
+            labelText: 'Sinopse (opcional)',
+            alignLabelWithHint: true,
+          ),
         ),
       ],
     );
@@ -455,7 +502,7 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
     final auth = ref.watch(authProvider);
     if (!auth.isAuthenticated) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Cadastro de livros')),
+        appBar: const BibDetailAppBar(title: 'Cadastro de livros'),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -467,10 +514,15 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
                 Text(
                   'Entre para contribuir com o acervo da comunidade.',
                   textAlign: TextAlign.center,
-                  style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+                  style: AppTheme.bodySans.copyWith(
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 20),
-                FilledButton(onPressed: () => context.push('/entrar'), child: const Text('Entrar')),
+                FilledButton(
+                  onPressed: () => context.push('/entrar'),
+                  child: const Text('Entrar'),
+                ),
               ],
             ),
           ),
@@ -479,22 +531,24 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
     }
 
     if (widget.isEditing && _loadingBook) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Editar livro'),
+      return const Scaffold(
+        appBar: BibDetailAppBar(
+          title: 'Editar livro',
           backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
+          titleColor: Colors.white,
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (widget.isEditing && _error != null && _tituloController.text.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Editar livro'),
+        appBar: const BibDetailAppBar(
+          title: 'Editar livro',
           backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
+          titleColor: Colors.white,
         ),
         body: Center(
           child: Column(
@@ -502,7 +556,10 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
             children: [
               Text(_error!),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _loadBookForEdit, child: const Text('Tentar novamente')),
+              FilledButton(
+                onPressed: _loadBookForEdit,
+                child: const Text('Tentar novamente'),
+              ),
             ],
           ),
         ),
@@ -512,15 +569,16 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
     final title = widget.isEditing
         ? 'Editar livro'
         : _step == _RegisterStep.isbn
-            ? 'Cadastro de livros'
-            : 'Confirmar livro';
+        ? 'Cadastro de livros'
+        : 'Confirmar livro';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: Text(title),
+      appBar: BibDetailAppBar(
+        title: title,
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
+        titleColor: Colors.white,
       ),
       body: widget.isEditing || _step == _RegisterStep.confirm
           ? _buildConfirmStep()
@@ -534,7 +592,10 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Adicionar ao acervo', style: AppTheme.displaySerif.copyWith(fontSize: 26)),
+          Text(
+            'Adicionar ao acervo',
+            style: AppTheme.displaySerif.copyWith(fontSize: 26),
+          ),
           const SizedBox(height: 8),
           Text(
             'Informe o ISBN do livro para buscarmos os dados automaticamente.',
@@ -546,29 +607,43 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
             decoration: BoxDecoration(
               color: AppTheme.secondaryContainer.withValues(alpha: 0.35),
               borderRadius: AppTheme.radiusXl,
-              border: Border.all(color: AppTheme.secondary.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AppTheme.secondary.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded, color: AppTheme.secondary, size: 20),
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: AppTheme.secondary,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Antes de cadastrar, busque o livro no catálogo. Assim evitamos duplicatas no acervo.',
-                    style: AppTheme.bodySans.copyWith(fontSize: 13, height: 1.4),
+                    style: AppTheme.bodySans.copyWith(
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          Text('Informe o ISBN do livro:', style: AppTheme.labelSans.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Informe o ISBN do livro:',
+            style: AppTheme.labelSans.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _isbnController,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9Xx\-]'))],
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9Xx\-]')),
+            ],
             textInputAction: TextInputAction.search,
             decoration: const InputDecoration(hintText: 'Digite aqui'),
             onSubmitted: (_) => _searchIsbn(),
@@ -588,9 +663,15 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                : const Text(
+                    'Continuar',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
           ),
           const SizedBox(height: 16),
           TextButton(
@@ -623,10 +704,16 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Já está no acervo', style: AppTheme.labelSans.copyWith(color: AppTheme.primary)),
+                  Text(
+                    'Já está no acervo',
+                    style: AppTheme.labelSans.copyWith(color: AppTheme.primary),
+                  ),
                   const SizedBox(height: 8),
                   Text(existing.titulo, style: AppTheme.titleSerif),
-                  Text(existing.autor, style: AppTheme.bodySans.copyWith(color: AppTheme.muted)),
+                  Text(
+                    existing.autor,
+                    style: AppTheme.bodySans.copyWith(color: AppTheme.muted),
+                  ),
                 ],
               ),
             ),
@@ -644,17 +731,41 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
               style: AppTheme.captionSans.copyWith(color: AppTheme.muted),
             ),
             const SizedBox(height: 20),
-            if (!widget.isEditing && !_manualMode && (_lookup?.items.length ?? 0) > 1) ...[
+            if (!widget.isEditing &&
+                !_manualMode &&
+                (_lookup?.items.length ?? 0) > 1) ...[
               Text('Outras edições:', style: AppTheme.labelSans),
               const SizedBox(height: 8),
               ..._lookup!.items.map((item) {
-                final selected = _selected?.titulo == item.titulo && _selected?.autor == item.autor;
+                final selected =
+                    _selected?.titulo == item.titulo &&
+                    _selected?.autor == item.autor;
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: BookCover(url: item.imagemUrl, width: 36, height: 52, borderRadius: 6),
-                  title: Text(item.titulo, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  subtitle: Text(item.autor, style: const TextStyle(fontSize: 12)),
-                  trailing: selected ? Icon(Icons.check_circle_rounded, color: AppTheme.primary) : null,
+                  leading: BookCover(
+                    url: item.imagemUrl,
+                    width: 36,
+                    height: 52,
+                    borderRadius: 6,
+                  ),
+                  title: Text(
+                    item.titulo,
+                    maxLines: 2,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  subtitle: Text(
+                    item.autor,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: selected
+                      ? Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.primary,
+                        )
+                      : null,
                   onTap: () => _applyLookupItem(item),
                 );
               }),
@@ -688,10 +799,10 @@ class _ReaderBookRegisterScreenState extends ConsumerState<ReaderBookRegisterScr
               _submitting
                   ? 'Salvando…'
                   : widget.isEditing
-                      ? 'Salvar alterações'
-                      : existing != null
-                          ? 'Ir para o livro'
-                          : 'Cadastrar no acervo',
+                  ? 'Salvar alterações'
+                  : existing != null
+                  ? 'Ir para o livro'
+                  : 'Cadastrar no acervo',
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ),

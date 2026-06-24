@@ -136,6 +136,13 @@ class AccountScreen extends ConsumerWidget {
                 title: 'Minha estante',
                 onTap: () => context.go('/estante'),
               ),
+            if (auth.role == UserRole.leitor)
+              _MenuTile(
+                icon: Icons.query_stats_rounded,
+                title: 'Estatísticas',
+                subtitle: 'Seu ano em leituras',
+                onTap: () => context.push('/estatisticas'),
+              ),
           ],
         ),
         if (auth.role == UserRole.admin) ...[

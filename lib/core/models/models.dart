@@ -1,8 +1,10 @@
 import 'user_role.dart';
 import 'admin_editor_models.dart';
+import 'reader_statistics.dart';
 
 export 'user_role.dart';
 export 'admin_editor_models.dart';
+export 'reader_statistics.dart';
 
 class PaginatedResponse<T> {
   PaginatedResponse({
@@ -655,4 +657,3 @@ class Address {
         'cep': cep,
       };
 }
-

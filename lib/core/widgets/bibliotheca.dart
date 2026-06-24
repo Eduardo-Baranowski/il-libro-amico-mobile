@@ -5,7 +5,13 @@ import '../theme/app_theme.dart';
 
 /// Barra superior fixa estilo Stitch (título Bibliotheca + busca).
 class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
-  const BibTopBar({super.key, this.showSearch = true, this.onSearch, this.onCart, this.cartCount});
+  const BibTopBar({
+    super.key,
+    this.showSearch = true,
+    this.onSearch,
+    this.onCart,
+    this.cartCount,
+  });
 
   final bool showSearch;
   final VoidCallback? onSearch;
@@ -26,15 +32,25 @@ class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
         child: SizedBox(
           height: 64,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.marginMobile),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.marginMobile,
+            ),
             child: Row(
               children: [
-                Text('Bibliotheca', style: AppTheme.headlineSerif.copyWith(color: AppTheme.primary)),
+                Text(
+                  'Bibliotheca',
+                  style: AppTheme.headlineSerif.copyWith(
+                    color: AppTheme.primary,
+                  ),
+                ),
                 const Spacer(),
                 if (showSearch)
                   IconButton(
                     onPressed: onSearch ?? () => context.push('/buscar'),
-                    icon: const Icon(Icons.search_rounded, color: AppTheme.primary),
+                    icon: const Icon(
+                      Icons.search_rounded,
+                      color: AppTheme.primary,
+                    ),
                     tooltip: 'Buscar',
                   ),
                 if (onCart != null)
@@ -43,7 +59,10 @@ class BibTopBar extends StatelessWidget implements PreferredSizeWidget {
                     children: [
                       IconButton(
                         onPressed: onCart,
-                        icon: const Icon(Icons.shopping_bag_outlined, color: AppTheme.primary),
+                        icon: const Icon(
+                          Icons.shopping_bag_outlined,
+                          color: AppTheme.primary,
+                        ),
                         tooltip: 'Carrinho',
                       ),
                       if (cartCount != null && cartCount! > 0)
@@ -95,7 +114,12 @@ class BibSectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Expanded(child: Text(title, style: AppTheme.headlineSerif.copyWith(fontSize: 22))),
+          Expanded(
+            child: Text(
+              title,
+              style: AppTheme.headlineSerif.copyWith(fontSize: 22),
+            ),
+          ),
           if (actionLabel != null && onAction != null)
             TextButton(
               onPressed: onAction,
@@ -111,7 +135,11 @@ class BibSectionHeader extends StatelessWidget {
 }
 
 class BibStatusChip extends StatelessWidget {
-  const BibStatusChip({super.key, required this.label, this.tone = BibChipTone.sage});
+  const BibStatusChip({
+    super.key,
+    required this.label,
+    this.tone = BibChipTone.sage,
+  });
 
   final String label;
   final BibChipTone tone;
@@ -119,16 +147,19 @@ class BibStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (tone) {
-      BibChipTone.sage => (AppTheme.secondaryContainer, AppTheme.onSecondaryContainer),
+      BibChipTone.sage => (
+        AppTheme.secondaryContainer,
+        AppTheme.onSecondaryContainer,
+      ),
       BibChipTone.terracotta => (AppTheme.primarySoft, AppTheme.primary),
-      BibChipTone.neutral => (AppTheme.surfaceContainer, AppTheme.onSurfaceVariant),
+      BibChipTone.neutral => (
+        AppTheme.surfaceContainer,
+        AppTheme.onSurfaceVariant,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: AppTheme.radiusSm,
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: AppTheme.radiusSm),
       child: Text(
         label.toUpperCase(),
         style: AppTheme.captionSans.copyWith(
@@ -166,10 +197,14 @@ class BibGenreChip extends StatelessWidget {
       backgroundColor: AppTheme.surfaceHighest,
       selectedColor: AppTheme.secondaryContainer,
       labelStyle: TextStyle(
-        color: selected ? AppTheme.onSecondaryContainer : AppTheme.onSurfaceVariant,
+        color: selected
+            ? AppTheme.onSecondaryContainer
+            : AppTheme.onSurfaceVariant,
       ),
       side: BorderSide(
-        color: selected ? AppTheme.secondary.withValues(alpha: 0.3) : Colors.transparent,
+        color: selected
+            ? AppTheme.secondary.withValues(alpha: 0.3)
+            : Colors.transparent,
       ),
       shape: RoundedRectangleBorder(borderRadius: AppTheme.radiusLg),
     );
@@ -186,7 +221,8 @@ class BibPriceText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       'R\$ $price',
-      style: style ??
+      style:
+          style ??
           AppTheme.titleSerif.copyWith(
             fontSize: 16,
             color: AppTheme.primary,
@@ -197,7 +233,11 @@ class BibPriceText extends StatelessWidget {
 }
 
 class BibCard extends StatelessWidget {
-  const BibCard({super.key, required this.child, this.padding = const EdgeInsets.all(16)});
+  const BibCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+  });
 
   final Widget child;
   final EdgeInsets padding;
@@ -208,7 +248,9 @@ class BibCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceWhite,
         borderRadius: AppTheme.radiusXl,
-        border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: AppTheme.outlineVariant.withValues(alpha: 0.25),
+        ),
         boxShadow: AppTheme.cardShadow,
       ),
       padding: padding,
@@ -223,22 +265,39 @@ class BibDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.title = 'Bibliotheca',
     this.actions = const [],
+    this.backgroundColor,
+    this.foregroundColor,
+    this.titleColor,
   });
 
   final String title;
   final List<Widget> actions;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+  final Color? titleColor;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
+    final resolvedForegroundColor = foregroundColor ?? AppTheme.primary;
+
     return AppBar(
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded),
+        icon: Icon(Icons.arrow_back_rounded, color: resolvedForegroundColor),
         onPressed: () => context.pop(),
       ),
-      title: Text(title, style: AppTheme.headlineSerif.copyWith(fontSize: 20, color: AppTheme.primary)),
+      backgroundColor: backgroundColor,
+      foregroundColor: resolvedForegroundColor,
+      iconTheme: IconThemeData(color: resolvedForegroundColor),
+      title: Text(
+        title,
+        style: AppTheme.headlineSerif.copyWith(
+          fontSize: 20,
+          color: titleColor ?? resolvedForegroundColor,
+        ),
+      ),
       actions: actions,
     );
   }

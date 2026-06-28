@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +9,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
+import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
 import 'address_notifier.dart';
 import 'cart_notifier.dart';
@@ -917,21 +917,11 @@ class _OrderItem extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: AppTheme.radiusSm,
-            child: SizedBox(
-              width: 44,
-              height: 56,
-              child: item.book.imagemUrl != null &&
-                      item.book.imagemUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: item.book.imagemUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppTheme.surfaceContainer),
-                    )
-                  : Container(color: AppTheme.surfaceContainer),
-            ),
+          BookCover(
+            url: item.book.imagemUrl,
+            width: 44,
+            height: 56,
+            borderRadius: 4,
           ),
           const SizedBox(width: 12),
           Expanded(

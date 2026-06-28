@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/models/models.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/utils/image_mime.dart';
 import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
@@ -336,7 +336,7 @@ class _ReaderBookRegisterScreenState
         ? (
             fieldName: 'imagem',
             filePath: _pickedCoverFile!.path,
-            mimeType: 'image/jpeg',
+            mimeType: mimeTypeFromPath(_pickedCoverFile!.path),
           )
         : null;
     final openLibraryCoverId = imageFile == null ? _openLibraryCoverId : null;

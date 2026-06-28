@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -426,22 +424,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
-                // Blurred Cover Background
-                Container(
+                // Blurred cover background (gradient when missing or failed to load)
+                BookCoverHeaderBackground(
+                  url: book.imagemUrl,
                   height: 250,
-                  width: double.infinity,
-                  color: AppTheme.surfaceContainer,
-                  child: book.imagemUrl != null && book.imagemUrl!.isNotEmpty
-                      ? ClipRect(
-                          child: ImageFiltered(
-                            imageFilter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                            child: CachedNetworkImage(
-                              imageUrl: book.imagemUrl!,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        )
-                      : null,
                 ),
                 // Overlay on top of blurred background
                 Container(

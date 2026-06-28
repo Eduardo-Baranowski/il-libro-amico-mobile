@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
 import '../models/models.dart';
-import '../storage/token_storage.dart';
+import '../utils/image_mime.dart';
 import '../utils/jwt_utils.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
@@ -139,7 +139,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           file: (
             fieldName: 'imagem',
             filePath: imageFile.path,
-            mimeType: 'image/jpeg',
+            mimeType: mimeTypeFromPath(imageFile.path),
           ),
           parser: (d) => d as Map<String, dynamic>,
         );

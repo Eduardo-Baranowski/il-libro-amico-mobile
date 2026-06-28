@@ -9,7 +9,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
 
 class ProfileEditDialog extends ConsumerStatefulWidget {
-  const ProfileEditDialog({super.key});
+  const ProfileEditDialog({super.key, this.onChangePassword});
+
+  final VoidCallback? onChangePassword;
 
   @override
   ConsumerState<ProfileEditDialog> createState() => _ProfileEditDialogState();
@@ -205,7 +207,21 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
                   border: OutlineInputBorder(borderRadius: AppTheme.radiusMd),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          widget.onChangePassword?.call();
+                        },
+                  icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                  label: const Text('Alterar senha'),
+                ),
+              ),
+              const SizedBox(height: 8),
               // Action Buttons
               Row(
                 children: [

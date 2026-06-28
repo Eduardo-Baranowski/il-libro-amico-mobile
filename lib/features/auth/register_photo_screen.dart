@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/utils/image_mime.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/reader_repository.dart';
@@ -37,12 +38,7 @@ class _RegisterPhotoScreenState extends ConsumerState<RegisterPhotoScreen> {
     }
   }
 
-  String _getMimeType(String path) {
-    final lower = path.toLowerCase();
-    if (lower.endsWith('.png')) return 'image/png';
-    if (lower.endsWith('.webp')) return 'image/webp';
-    return 'image/jpeg';
-  }
+  String _getMimeType(String path) => mimeTypeFromPath(path);
 
   Future<void> _upload() async {
     if (_image == null) return;

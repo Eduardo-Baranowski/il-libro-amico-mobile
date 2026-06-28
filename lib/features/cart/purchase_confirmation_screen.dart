@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
+import '../../core/widgets/book_cover.dart';
 
 class PurchaseConfirmationScreen extends StatelessWidget {
   const PurchaseConfirmationScreen({super.key, required this.confirmation});
@@ -240,21 +240,11 @@ class _ConfirmationItem extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: AppTheme.radiusSm,
-            child: SizedBox(
-              width: 44,
-              height: 56,
-              child: item.book.imagemUrl != null &&
-                      item.book.imagemUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: item.book.imagemUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppTheme.surfaceContainer),
-                    )
-                  : Container(color: AppTheme.surfaceContainer),
-            ),
+          BookCover(
+            url: item.book.imagemUrl,
+            width: 44,
+            height: 56,
+            borderRadius: 4,
           ),
           const SizedBox(width: 12),
           Expanded(

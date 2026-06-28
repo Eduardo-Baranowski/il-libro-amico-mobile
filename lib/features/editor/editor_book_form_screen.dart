@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/models/admin_editor_models.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/image_mime.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/editor_repository.dart';
 
@@ -322,7 +323,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           ? (
               fieldName: 'imagem',
               filePath: _pickedCoverFile!.path,
-              mimeType: 'image/jpeg',
+              mimeType: mimeTypeFromPath(_pickedCoverFile!.path),
             )
           : null;
 

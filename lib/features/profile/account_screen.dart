@@ -17,7 +17,16 @@ class AccountScreen extends ConsumerWidget {
   void _openProfileEditor(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const ProfileEditDialog(),
+      builder: (context) => ProfileEditDialog(
+        onChangePassword: () => _openChangePassword(context),
+      ),
+    );
+  }
+
+  void _openChangePassword(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => const ChangePasswordDialog(),
     );
   }
 
@@ -130,6 +139,12 @@ class AccountScreen extends ConsumerWidget {
               subtitle: 'Indique, vote e participe do sorteio',
               onTap: () => context.push('/clube'),
             ),
+            _MenuTile(
+              icon: Icons.lock_outline_rounded,
+              title: 'Alterar senha',
+              subtitle: 'Atualize a senha da sua conta',
+              onTap: () => _openChangePassword(context),
+            ),
             if (auth.role == UserRole.leitor)
               _MenuTile(
                 icon: Icons.library_books_outlined,
@@ -193,19 +208,6 @@ class AccountScreen extends ConsumerWidget {
             ],
           ),
         ],
-        const SizedBox(height: 16),
-        _MenuSection(
-          children: [
-            _MenuTile(
-              icon: Icons.lock_outline_rounded,
-              title: 'Alterar senha',
-              onTap: () => showDialog(
-                context: context,
-                builder: (_) => const ChangePasswordDialog(),
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 16),
         const ApiSettingsCard(),
         const SizedBox(height: 20),

@@ -9,11 +9,13 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/utils/image_mime.dart';
 import '../../core/models/admin_editor_models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/admin_repository.dart';
 import '../../data/editor_repository.dart';
+import 'quick_create_editora_dialog.dart';
 
 const _generos = [
   'Romance',
@@ -63,6 +65,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
 
   List<Editora> _editoras = [];
   int? _selectedEditoraId;
+  String? _suggestedEditoraNome;
 
   @override
   void initState() {
@@ -136,18 +139,51 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
     super.dispose();
   }
 
-  Future<void> _loadEditoras() async {
+  Future<void> _loadEditoras({int? selectId}) async {
     try {
       final editoras = await ref.read(adminRepositoryProvider).listEditoras();
       if (mounted) {
         setState(() {
           _editoras = editoras;
-          if (!widget.isEditing && _editoras.isNotEmpty) {
+          if (selectId != null) {
+            _selectedEditoraId = selectId;
+          } else if (!widget.isEditing && _editoras.isNotEmpty && _selectedEditoraId == null) {
             _selectedEditoraId = _editoras.first.id;
           }
         });
       }
     } catch (_) {}
+  }
+
+  Future<void> _openQuickCreateEditora() async {
+    final created = await showDialog<Editora>(
+      context: context,
+      builder: (_) => QuickCreateEditoraDialog(
+        initialName: _suggestedEditoraNome,
+      ),
+    );
+    if (created == null || !mounted) return;
+
+    _suggestedEditoraNome = null;
+    await _loadEditoras(selectId: created.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Editora "${created.nome}" criada e selecionada.')),
+      );
+    }
+  }
+
+  void _trySelectEditoraByName(String? nome) {
+    if (nome == null || nome.trim().isEmpty) return;
+    final normalized = nome.trim().toLowerCase();
+    final match = _editoras.where(
+      (e) => e.nome.trim().toLowerCase() == normalized,
+    );
+    if (match.isNotEmpty) {
+      setState(() => _selectedEditoraId = match.first.id);
+    } else {
+      _suggestedEditoraNome = nome.trim();
+    }
   }
 
   void _onLookupQueryChanged() {
@@ -307,6 +343,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
       _lookupResults = [];
       _lookupError = null;
     });
+    _trySelectEditoraByName(item.editora);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Dados preenchidos automaticamente.')),
     );
@@ -326,7 +363,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
     try {
       final pInt = int.tryParse(_paginas.text.trim());
       final imageFile = _pickedCoverFile != null
-          ? (fieldName: 'imagem', filePath: _pickedCoverFile!.path, mimeType: 'image/jpeg')
+          ? (fieldName: 'imagem', filePath: _pickedCoverFile!.path, mimeType: mimeTypeFromPath(_pickedCoverFile!.path))
           : null;
 
       if (widget.isEditing) {
@@ -744,15 +781,42 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                     children: [
                                       Icon(Icons.business_rounded, color: AppTheme.primary),
                                       const SizedBox(width: 8),
-                                      const Text(
-                                        'Editora',
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                      const Expanded(
+                                        child: Text(
+                                          'Editora',
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                        ),
+                                      ),
+                                      TextButton.icon(
+                                        onPressed: _openQuickCreateEditora,
+                                        icon: const Icon(Icons.add_rounded, size: 18),
+                                        label: const Text('Nova'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppTheme.primary,
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 12),
                                   if (_editoras.isEmpty)
-                                    const Text('Nenhuma editora cadastrada. Por favor, cadastre uma na tela de Editoras primeiro.')
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        Text(
+                                          'Nenhuma editora cadastrada.',
+                                          style: AppTheme.bodySans.copyWith(
+                                            color: AppTheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        OutlinedButton.icon(
+                                          onPressed: _openQuickCreateEditora,
+                                          icon: const Icon(Icons.add_business_rounded),
+                                          label: const Text('Cadastrar editora'),
+                                        ),
+                                      ],
+                                    )
                                   else
                                     DropdownButtonFormField<int>(
                                       value: _selectedEditoraId,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/api/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/reader_repository.dart';
 
@@ -54,16 +55,29 @@ class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
           ),
         );
       }
-    } catch (e) {
+    } on ApiException catch (e) {
       if (mounted) {
-        final msg = e.toString().contains('incorreta') ||
-                e.toString().contains('401') ||
-                e.toString().contains('403')
+        final msg = e.statusCode == 400 &&
+                (e.message.toLowerCase().contains('incorreta') ||
+                    e.message.toLowerCase().contains('atual'))
             ? 'Senha atual incorreta.'
-            : 'Não foi possível alterar a senha. Tente novamente.';
+            : e.message;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Não foi possível alterar a senha. Tente novamente.'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -84,14 +98,15 @@ class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 children: [
                   const Icon(Icons.lock_outline_rounded,
@@ -225,6 +240,7 @@ class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

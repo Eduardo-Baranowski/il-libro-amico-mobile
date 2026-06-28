@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -260,22 +259,11 @@ class _CartItemCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Cover
-          ClipRRect(
-            borderRadius: AppTheme.radiusMd,
-            child: SizedBox(
-              width: 70,
-              height: 90,
-              child: book.imagemUrl != null && book.imagemUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: book.imagemUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
-                          color: AppTheme.surfaceContainer),
-                      errorWidget: (_, __, ___) =>
-                          Container(color: AppTheme.surfaceContainer),
-                    )
-                  : Container(color: AppTheme.surfaceContainer),
-            ),
+          BookCover(
+            url: book.imagemUrl,
+            width: 70,
+            height: 90,
+            borderRadius: 8,
           ),
           const SizedBox(width: 14),
 
@@ -446,22 +434,11 @@ class _SuggestionsSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: AppTheme.radiusMd,
-                          child: SizedBox(
-                            height: 120,
-                            width: 100,
-                            child: book.imagemUrl != null &&
-                                    book.imagemUrl!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: book.imagemUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, __) => Container(
-                                        color: AppTheme.surfaceContainer),
-                                  )
-                                : Container(
-                                    color: AppTheme.surfaceContainer),
-                          ),
+                        BookCover(
+                          url: book.imagemUrl,
+                          width: 100,
+                          height: 120,
+                          borderRadius: 8,
                         ),
                         const SizedBox(height: 6),
                         Text(

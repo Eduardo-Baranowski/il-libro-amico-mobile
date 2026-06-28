@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/utils/image_mime.dart';
 import '../../core/models/admin_editor_models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/admin_repository.dart';
@@ -86,7 +87,7 @@ class _AdminEditorasScreenState extends ConsumerState<AdminEditorasScreen> {
     setState(() => _creating = true);
     try {
       final imageFile = _pickedImage != null
-          ? (fieldName: 'imagem', filePath: _pickedImage!.path, mimeType: 'image/jpeg')
+          ? (fieldName: 'imagem', filePath: _pickedImage!.path, mimeType: mimeTypeFromPath(_pickedImage!.path))
           : null;
 
       await ref.read(adminRepositoryProvider).createEditora(

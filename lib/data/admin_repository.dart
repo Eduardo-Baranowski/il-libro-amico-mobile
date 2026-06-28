@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/api_client.dart';
-import '../core/models/admin_editor_models.dart';
 import '../core/models/models.dart';
 import '../core/providers.dart';
 
@@ -96,6 +95,7 @@ class AdminRepository {
     int? paginas,
     ({String fieldName, String filePath, String mimeType})? imageFile,
     int? openLibraryCoverId,
+    String? authorNationality,
   }) async {
     final fields = <String, String>{};
     if (editoraId != null) fields['editora_id'] = editoraId.toString();
@@ -109,6 +109,7 @@ class AdminRepository {
     if (openLibraryCoverId != null) {
       fields['open_library_cover_id'] = openLibraryCoverId.toString();
     }
+    if (authorNationality != null) fields['author_nationality'] = authorNationality;
     await _api.putMultipart('/admin/books/$id', fields: fields, file: imageFile);
   }
 
@@ -129,6 +130,119 @@ class AdminRepository {
     );
   }
 
+  Future<List<AdminAuthor>> listAuthors({String? search}) {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    return _api.get(
+      '/admin/autores',
+      query: query,
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(AdminAuthor.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<List<NacionalidadeAdmin>> listNacionalidadesAdmin({String? search}) {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    return _api.get(
+      '/admin/nacionalidades',
+      query: query,
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(NacionalidadeAdmin.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<int> createNacionalidade({
+    required String nome,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+    String? flagUrl,
+  }) async {
+    if (imageFile != null) {
+      final res = await _api.postMultipart('/admin/nacionalidades', fields: {'nome': nome}, file: imageFile, parser: (d) => d as Map<String, dynamic>);
+      return res['id'] as int? ?? 0;
+    }
+    final res = await _api.post('/admin/nacionalidades', body: {'nome': nome, 'flag': flagUrl}, parser: (d) => d as Map<String, dynamic>);
+    return res['id'] as int? ?? 0;
+  }
+
+  Future<void> updateNacionalidade({
+    required int id,
+    String? nome,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+    String? flagUrl,
+  }) async {
+    final fields = <String, String>{};
+    if (nome != null) fields['nome'] = nome;
+    if (imageFile != null) {
+      await _api.putMultipart('/admin/nacionalidades/$id', fields: fields, file: imageFile);
+      return;
+    }
+    if (flagUrl != null) fields['flag'] = flagUrl;
+    await _api.put('/admin/nacionalidades/$id', body: fields);
+  }
+
+  Future<void> deleteNacionalidade(int id) async {
+    await _api.delete('/admin/nacionalidades/$id');
+  }
+
+  Future<List<String>> listAuthorNationalities() {
+    // Prefer the authenticated public endpoint which returns full objects.
+    // If it fails (e.g. missing token), fall back to the admin endpoint that returns plain strings.
+    return _api.get(
+      '/reader/autores/nacionalidades',
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map((m) => (m['nome'] as String?) ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList(),
+    ).catchError((_) async {
+      return _api.get(
+        '/admin/autores/nacionalidades',
+        parser: (data) => (data as List).whereType<String>().toList(),
+      );
+    });
+  }
+
+  Future<AdminAuthorDetail> getAuthor(int id) {
+    return _api.get('/admin/autores/$id', parser: (data) => AdminAuthorDetail.fromJson(data as Map<String, dynamic>));
+  }
+
+  Future<int> createAuthor({
+    required String nome,
+    String? bio,
+    String? nacionalidade,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final fields = <String, String>{'nome': nome};
+    if (bio != null) fields['bio'] = bio;
+    if (nacionalidade != null) fields['nacionalidade'] = nacionalidade;
+
+    final res = await _api.postMultipart('/admin/autores', fields: fields, file: imageFile, parser: (d) => d as Map<String, dynamic>);
+    return res['id'] as int? ?? 0;
+  }
+
+  Future<void> updateAuthor({
+    required int id,
+    String? nome,
+    String? bio,
+    String? nacionalidade,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final fields = <String, String>{};
+    if (nome != null) fields['nome'] = nome;
+    if (bio != null) fields['bio'] = bio;
+    if (nacionalidade != null) fields['nacionalidade'] = nacionalidade;
+    await _api.putMultipart('/admin/autores/$id', fields: fields, file: imageFile);
+  }
+
+  Future<void> deleteAuthor(int id) async {
+    await _api.delete('/admin/autores/$id');
+  }
+
   Future<int> createEditora({
     required String nome,
     ({String fieldName, String filePath, String mimeType})? imageFile,
@@ -144,6 +258,24 @@ class AdminRepository {
     return res['id'] as int? ?? 0;
   }
 
+  Future<void> updateEditora({
+    required int id,
+    String? nome,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final fields = <String, String>{};
+    if (nome != null) fields['nome'] = nome;
+    if (imageFile != null) {
+      await _api.putMultipart('/admin/editoras/$id', fields: fields, file: imageFile);
+      return;
+    }
+    await _api.put('/admin/editoras/$id', body: fields);
+  }
+
+  Future<void> deleteEditora(int id) async {
+    await _api.delete('/admin/editoras/$id');
+  }
+
   Future<int> createBook({
     required int editoraId,
     required String titulo,
@@ -153,6 +285,7 @@ class AdminRepository {
     String? descricao,
     ({String fieldName, String filePath, String mimeType})? imageFile,
     int? openLibraryCoverId,
+    String? authorNationality,
   }) async {
     final body = <String, String>{
       'editora_id': editoraId.toString(),
@@ -165,6 +298,7 @@ class AdminRepository {
     if (openLibraryCoverId != null) {
       body['open_library_cover_id'] = openLibraryCoverId.toString();
     }
+    if (authorNationality != null) body['author_nationality'] = authorNationality;
 
     final res = await _api.postMultipart(
       '/admin/books',

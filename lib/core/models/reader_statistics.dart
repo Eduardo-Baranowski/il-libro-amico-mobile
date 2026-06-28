@@ -14,6 +14,7 @@ class ReaderStatistics {
     required this.topRead,
     required this.formats,
     required this.languages,
+    required this.nationalities,
   });
 
   final int year;
@@ -30,6 +31,7 @@ class ReaderStatistics {
   final List<StatsBook> topRead;
   final List<StatsCount> formats;
   final List<StatsCount> languages;
+  final List<StatsCount> nationalities;
 
   factory ReaderStatistics.fromJson(Map<String, dynamic> json) {
     return ReaderStatistics(
@@ -47,6 +49,7 @@ class ReaderStatistics {
       topRead: _list(json['top_read'], StatsBook.fromJson),
       formats: _list(json['formats'], StatsCount.fromJson),
       languages: _list(json['languages'], StatsCount.fromJson),
+      nationalities: _list(json['author_nationalities'], StatsCount.fromJson),
     );
   }
 }

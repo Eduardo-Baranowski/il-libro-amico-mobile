@@ -297,12 +297,25 @@ class _AdminBooksScreenState extends ConsumerState<AdminBooksScreen> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             const SizedBox(height: 4),
-                                            Text(
-                                              book.autor,
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 12,
-                                              ),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  book.autor,
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                                if (book.autorNacionalidade != null && book.autorNacionalidade!.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 6),
+                                                    child: Text(
+                                                      'Nacionalidade: ${book.autorNacionalidade!}',
+                                                      style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                             const SizedBox(height: 8),
                                             Wrap(

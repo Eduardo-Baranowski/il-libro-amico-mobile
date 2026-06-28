@@ -101,6 +101,7 @@ class BookClubMember {
     required this.userNome,
     this.imagemUrl,
     required this.papel,
+    required this.allowMultipleNominations,
     required this.criadoEm,
   });
 
@@ -109,6 +110,7 @@ class BookClubMember {
   final String userNome;
   final String? imagemUrl;
   final String papel;
+  final bool allowMultipleNominations;
   final String criadoEm;
 
   bool get isOwner => papel == 'dono';
@@ -121,6 +123,7 @@ class BookClubMember {
       userNome: user?['nome'] as String? ?? '',
       imagemUrl: user?['imagem_url'] as String?,
       papel: json['papel'] as String? ?? 'membro',
+      allowMultipleNominations: json['allow_multiple_nominations'] as bool? ?? false,
       criadoEm: json['criado_em'] as String? ?? '',
     );
   }
@@ -185,6 +188,8 @@ class BookClubNomination {
     required this.votesCount,
     required this.votedByMe,
     this.indicadoPor,
+    this.editora,
+    this.editoraImagemUrl,
     this.cycleTitulo,
     this.criadoEm,
   });
@@ -200,6 +205,8 @@ class BookClubNomination {
   final int votesCount;
   final bool votedByMe;
   final BookClubNominator? indicadoPor;
+  final String? editora;
+  final String? editoraImagemUrl;
   final String? cycleTitulo;
   final String? criadoEm;
 
@@ -217,11 +224,18 @@ class BookClubNomination {
         indicadoPor: json['indicado_por'] != null
             ? BookClubNominator.fromJson(json['indicado_por'] as Map<String, dynamic>)
             : null,
+        editora: json['editora'] as String?,
+        editoraImagemUrl: json['editora_imagem_url'] as String?,
         cycleTitulo: json['cycle_titulo'] as String?,
         criadoEm: json['criado_em'] as String?,
       );
 
-  BookClubNomination copyWith({int? votesCount, bool? votedByMe}) => BookClubNomination(
+  BookClubNomination copyWith({
+    int? votesCount,
+    bool? votedByMe,
+    String? editora,
+    String? editoraImagemUrl,
+  }) => BookClubNomination(
         id: id,
         cycleId: cycleId,
         titulo: titulo,
@@ -233,6 +247,8 @@ class BookClubNomination {
         votesCount: votesCount ?? this.votesCount,
         votedByMe: votedByMe ?? this.votedByMe,
         indicadoPor: indicadoPor,
+        editora: editora ?? this.editora,
+        editoraImagemUrl: editoraImagemUrl ?? this.editoraImagemUrl,
         cycleTitulo: cycleTitulo,
         criadoEm: criadoEm,
       );
@@ -243,19 +259,37 @@ class BookClubUserStats {
     required this.votesUsed,
     required this.votesRemaining,
     required this.hasNominated,
+    required this.canNominate,
     this.myNominationId,
   });
 
   final int votesUsed;
   final int votesRemaining;
   final bool hasNominated;
+  final bool canNominate;
   final int? myNominationId;
 
   factory BookClubUserStats.fromJson(Map<String, dynamic> json) => BookClubUserStats(
         votesUsed: json['votes_used'] as int? ?? 0,
         votesRemaining: json['votes_remaining'] as int? ?? 3,
         hasNominated: json['has_nominated'] as bool? ?? false,
+        canNominate: json['can_nominate'] as bool? ?? true,
         myNominationId: json['my_nomination_id'] as int?,
+      );
+
+  BookClubUserStats copyWith({
+    int? votesUsed,
+    int? votesRemaining,
+    bool? hasNominated,
+    bool? canNominate,
+    int? myNominationId,
+  }) =>
+      BookClubUserStats(
+        votesUsed: votesUsed ?? this.votesUsed,
+        votesRemaining: votesRemaining ?? this.votesRemaining,
+        hasNominated: hasNominated ?? this.hasNominated,
+        canNominate: canNominate ?? this.canNominate,
+        myNominationId: myNominationId ?? this.myNominationId,
       );
 }
 

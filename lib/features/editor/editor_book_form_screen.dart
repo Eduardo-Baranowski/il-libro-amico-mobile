@@ -14,6 +14,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/image_mime.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/editor_repository.dart';
+import '../../data/admin_repository.dart';
 
 /// Mesmos gêneros do web / Open Library (`app/services/book_lookup.py`).
 const _generos = [
@@ -51,10 +52,12 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titulo;
   late final TextEditingController _autor;
+  late final TextEditingController _authorNationality;
   late final TextEditingController _preco;
   late final TextEditingController _estoque;
   late final TextEditingController _descricao;
   late final TextEditingController _paginas;
+  List<String> _nationalities = [];
   String _genero = 'Romance';
   String _condicao = 'novo';
   bool _saving = false;
@@ -74,6 +77,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     final b = widget.book;
     _titulo = TextEditingController(text: b?.titulo ?? '');
     _autor = TextEditingController(text: b?.autor ?? '');
+    _authorNationality = TextEditingController(text: '');
     _preco = TextEditingController(text: b?.preco ?? '');
     _estoque = TextEditingController(text: '${b?.estoque ?? 0}');
     _descricao = TextEditingController(text: b?.descricao ?? '');
@@ -91,6 +95,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
         if (mounted) setState(() {});
       });
     }
+    _fetchNationalities();
     _lookupController.addListener(_onLookupQueryChanged);
   }
 
@@ -100,11 +105,19 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
     _lookupController.dispose();
     _titulo.dispose();
     _autor.dispose();
+    _authorNationality.dispose();
     _preco.dispose();
     _estoque.dispose();
     _descricao.dispose();
     _paginas.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchNationalities() async {
+    try {
+      final list = await ref.read(adminRepositoryProvider).listAuthorNationalities();
+      if (mounted) setState(() => _nationalities = list);
+    } catch (_) {}
   }
 
   void _onLookupQueryChanged() {
@@ -332,6 +345,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
           id: widget.book!.id,
           titulo: _titulo.text.trim(),
           autor: _autor.text.trim(),
+          authorNationality: _authorNationality.text.trim().isEmpty ? null : _authorNationality.text.trim(),
           preco: _preco.text.trim(),
           estoque: _estoque.text.trim(),
           genero: _genero,
@@ -346,6 +360,7 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
         await repo.createBook(
           titulo: _titulo.text.trim(),
           autor: _autor.text.trim(),
+          authorNationality: _authorNationality.text.trim().isEmpty ? null : _authorNationality.text.trim(),
           preco: _preco.text.trim(),
           estoque: _estoque.text.trim(),
           genero: _genero,
@@ -790,6 +805,38 @@ class _EditorBookFormScreenState extends ConsumerState<EditorBookFormScreen> {
                                     validator: (v) =>
                                         v == null || v.trim().isEmpty ? 'Informe o autor' : null,
                                   ),
+                                ),
+                                const SizedBox(height: 14),
+                                Autocomplete<String>(
+                                  optionsBuilder: (TextEditingValue textEditingValue) {
+                                    final q = textEditingValue.text.toLowerCase();
+                                    if (q.isEmpty) return _nationalities;
+                                    return _nationalities.where((e) => e.toLowerCase().contains(q)).toList();
+                                  },
+                                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                                    controller.text = _authorNationality.text;
+                                    controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+                                    controller.addListener(() {
+                                      _authorNationality.text = controller.text;
+                                    });
+                                    return TextFormField(
+                                      controller: controller,
+                                      focusNode: focusNode,
+                                      textInputAction: TextInputAction.next,
+                                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                                      decoration: const InputDecoration(
+                                        hintText: 'Nacionalidade do autor',
+                                        prefixIcon: Icon(Icons.flag_rounded),
+                                      ),
+                                      validator: (v) {
+                                        final val = v?.trim() ?? '';
+                                        if (val.isEmpty) return null;
+                                        if (!_nationalities.contains(val)) return 'Selecione uma nacionalidade existente';
+                                        return null;
+                                      },
+                                    );
+                                  },
+                                  onSelected: (s) => _authorNationality.text = s,
                                 ),
                                 const SizedBox(height: 14),
                                 _LabeledField(

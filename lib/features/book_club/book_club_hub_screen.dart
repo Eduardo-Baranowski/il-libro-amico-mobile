@@ -24,16 +24,36 @@ class BookClubHubScreen extends ConsumerStatefulWidget {
   ConsumerState<BookClubHubScreen> createState() => _BookClubHubScreenState();
 }
 
-class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
+class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> with WidgetsBindingObserver {
   BookClubHub? _hub;
   bool _loading = true;
   String? _error;
   final _votingIds = <int>{};
+  final _deletingIds = <int>{};
+  bool _wasInBackground = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _wasInBackground) {
+      // Recarrega ao voltar para a tela
+      _load(refresh: true);
+    }
+    if (state == AppLifecycleState.paused) {
+      _wasInBackground = true;
+    }
   }
 
   Future<void> _load({bool refresh = false}) async {
@@ -82,6 +102,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                   votesUsed: _hub!.maxVotesPerUser - result.votesRemaining,
                   votesRemaining: result.votesRemaining,
                   hasNominated: _hub!.userStats!.hasNominated,
+                  canNominate: _hub!.userStats!.canNominate,
                   myNominationId: _hub!.userStats!.myNominationId,
                 )
               : null,
@@ -96,13 +117,60 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
     }
   }
 
+  Future<void> _deleteNomination(BookClubNomination nomination) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remover indicação'),
+        content: Text('Tem certeza que deseja remover "${nomination.titulo}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remover', style: TextStyle(color: AppTheme.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _deletingIds.add(nomination.id));
+    try {
+      await ref.read(bookClubRepositoryProvider).deleteNomination(widget.clubId, nomination.id);
+      if (!mounted || _hub == null) return;
+
+      setState(() {
+        _hub = _hub!.copyWith(
+          nominationsPreview: _hub!.nominationsPreview.where((n) => n.id != nomination.id).toList(),
+          totalNominations: _hub!.totalNominations > 0 ? _hub!.totalNominations - 1 : 0,
+        );
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Indicação removida com sucesso')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _deletingIds.remove(nomination.id));
+    }
+  }
+
   Future<void> _openNominate() async {
     final auth = ref.read(authProvider);
     if (!auth.isAuthenticated) {
       if (mounted) context.push('/entrar');
       return;
     }
-    if (_hub?.userStats?.hasNominated == true) {
+    if (_hub?.userStats?.canNominate == false) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Você já indicou um livro neste ciclo')),
       );
@@ -120,7 +188,11 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
               livroId: data.livroId,
               titulo: data.titulo,
               autor: data.autor,
+              editoraId: data.editoraId,
+              editora: data.editora,
               motivo: data.motivo,
+              imageFile: data.imageFile,
+              editoraImageFile: data.editoraImageFile,
             ),
       ),
     );
@@ -252,7 +324,7 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                                   .inviteUser(widget.clubId, userId: user.id);
                               if (dialogContext.mounted) {
                                 Navigator.pop(dialogContext);
-                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                ScaffoldMessenger.of(dialogContext).showSnackBar(
                                   SnackBar(content: Text('${user.nome} adicionado ao clube')),
                                 );
                               }
@@ -512,15 +584,21 @@ class _BookClubHubScreenState extends ConsumerState<BookClubHubScreen> {
                           )
                         else
                           ..._hub!.nominationsPreview.map(
-                            (n) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: NominationCard(
-                                nomination: n,
-                                compact: true,
-                                votingEnabled: _hub!.cycle.isOpen,
-                                onVote: _votingIds.contains(n.id) ? () {} : () => _vote(n),
-                              ),
-                            ),
+                            (n) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                  child: NominationCard(
+                                      nomination: n,
+                                      compact: true,
+                                      votingEnabled: _hub!.cycle.isOpen,
+                                      onVote: _votingIds.contains(n.id) ? () {} : () => _vote(n),
+                                      onTapBook: n.livroId != null ? () => context.push('/livro/${n.livroId}') : null,
+                                      onDelete: _isOwnerOrAdmin && !_deletingIds.contains(n.id)
+                                      ? () => _deleteNomination(n)
+                                      : null,
+                                    ),
+                              );
+                            },
                           ),
                         if (_hub!.totalNominations > _hub!.nominationsPreview.length)
                           Center(

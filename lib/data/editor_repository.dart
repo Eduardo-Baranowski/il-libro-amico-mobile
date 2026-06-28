@@ -52,6 +52,7 @@ class EditorRepository {
     String condicao = 'novo',
     int? paginas,
     ({String fieldName, String filePath, String mimeType})? imageFile,
+    String? authorNationality,
   }) async {
     final res = await _api.postMultipart<Map<String, dynamic>>(
       '/editor/books',
@@ -66,6 +67,7 @@ class EditorRepository {
         if (openLibraryCoverId != null)
           'open_library_cover_id': '$openLibraryCoverId',
         if (paginas != null) 'paginas': '$paginas',
+        if (authorNationality != null) 'author_nationality': authorNationality,
       },
       file: imageFile,
       parser: (d) => d as Map<String, dynamic>,
@@ -85,6 +87,7 @@ class EditorRepository {
     String? condicao,
     int? paginas,
     ({String fieldName, String filePath, String mimeType})? imageFile,
+    String? authorNationality,
   }) async {
     final fields = <String, String>{};
     if (titulo != null) fields['titulo'] = titulo;
@@ -98,6 +101,7 @@ class EditorRepository {
       fields['open_library_cover_id'] = '$openLibraryCoverId';
     }
     if (paginas != null) fields['paginas'] = '$paginas';
+    if (authorNationality != null) fields['author_nationality'] = authorNationality;
     await _api.putMultipart('/editor/books/$id', fields: fields, file: imageFile);
   }
 

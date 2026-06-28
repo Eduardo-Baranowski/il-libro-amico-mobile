@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/models/book_club_models.dart';
+import '../../core/models/user_role.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bibliotheca.dart';
 import '../../data/book_club_repository.dart';
@@ -21,12 +22,11 @@ class BookClubVotingScreen extends ConsumerStatefulWidget {
   ConsumerState<BookClubVotingScreen> createState() => _BookClubVotingScreenState();
 }
 
-class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
+class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _items = <BookClubNomination>[];
   BookClubCycleInfo? _cycle;
   int _maxVotes = 3;
-  int _votesRemaining = 3;
   bool _loading = true;
   bool _loadingMore = false;
   String? _error;
@@ -34,18 +34,48 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
   int _pages = 1;
   final _activities = <BookClubActivity>[];
   final _votingIds = <int>{};
+  final _deletingIds = <int>{};
+  BookClub? _club;
+  bool _wasInBackground = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load(page: 1);
+    _loadClub();
     _loadActivity();
+  }
+
+  bool get _isOwnerOrAdmin {
+    final auth = ref.read(authProvider);
+    return _club?.isOwner == true || auth.role == UserRole.admin;
+  }
+
+  Future<void> _loadClub() async {
+    try {
+      final hub = await ref.read(bookClubRepositoryProvider).hub(widget.clubId);
+      if (mounted) setState(() => _club = hub.club);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _wasInBackground) {
+      // Recarrega ao voltar para a tela
+      _load(page: 1);
+      _loadActivity();
+    }
+    if (state == AppLifecycleState.paused) {
+      _wasInBackground = true;
+    }
   }
 
   Future<void> _loadActivity() async {
@@ -107,7 +137,6 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
           await ref.read(bookClubRepositoryProvider).toggleVote(widget.clubId, nomination.id);
       if (!mounted) return;
       setState(() {
-        _votesRemaining = result.votesRemaining;
         final index = _items.indexWhere((n) => n.id == nomination.id);
         if (index >= 0) {
           _items[index] = _items[index].copyWith(
@@ -126,6 +155,49 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
     }
   }
 
+  Future<void> _deleteNomination(BookClubNomination nomination) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remover indicação'),
+        content: Text('Tem certeza que deseja remover "${nomination.titulo}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remover', style: TextStyle(color: AppTheme.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _deletingIds.add(nomination.id));
+    try {
+      await ref.read(bookClubRepositoryProvider).deleteNomination(widget.clubId, nomination.id);
+      if (!mounted) return;
+      setState(() {
+        _items.removeWhere((n) => n.id == nomination.id);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Indicação removida com sucesso')),
+        );
+      }
+      _loadActivity();
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _deletingIds.remove(nomination.id));
+    }
+  }
+
   Future<void> _openNominate() async {
     final auth = ref.read(authProvider);
     if (!auth.isAuthenticated) {
@@ -140,16 +212,25 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
       builder: (context) => NominateBookSheet(
         searchBooks: (query) => ref.read(searchRepositoryProvider).search(query),
         onSubmit: (data) => ref.read(bookClubRepositoryProvider).nominate(
-              widget.clubId,
-              livroId: data.livroId,
-              titulo: data.titulo,
-              autor: data.autor,
-              motivo: data.motivo,
-            ),
+          widget.clubId,
+          livroId: data.livroId,
+          titulo: data.titulo,
+          autor: data.autor,
+          editoraId: data.editoraId,
+          editora: data.editora,
+          motivo: data.motivo,
+          imageFile: data.imageFile,
+          editoraImageFile: data.editoraImageFile,
+        ),
       ),
     );
 
     if (submitted == true) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Livro indicado com sucesso!')),
+        );
+      }
       await _load(page: 1);
       await _loadActivity();
     }
@@ -219,14 +300,20 @@ class _BookClubVotingScreenState extends ConsumerState<BookClubVotingScreen> {
                       child: Text(_error!, style: AppTheme.bodySans.copyWith(color: AppTheme.error)),
                     ),
                   ..._items.map(
-                    (n) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: NominationCard(
-                        nomination: n,
-                        votingEnabled: _cycle?.isOpen ?? false,
-                        onVote: _votingIds.contains(n.id) ? () {} : () => _vote(n),
-                      ),
-                    ),
+                    (n) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: NominationCard(
+                          nomination: n,
+                          votingEnabled: _cycle?.isOpen ?? false,
+                          onVote: _votingIds.contains(n.id) ? () {} : () => _vote(n),
+                          onTapBook: n.livroId != null ? () => context.push('/livro/${n.livroId}') : null,
+                          onDelete: _isOwnerOrAdmin && !_deletingIds.contains(n.id)
+                              ? () => _deleteNomination(n)
+                              : null,
+                        ),
+                      );
+                    },
                   ),
                   if (_page < _pages)
                     Center(

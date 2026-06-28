@@ -286,7 +286,14 @@ class BibDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       leading: IconButton(
         icon: Icon(Icons.arrow_back_rounded, color: resolvedForegroundColor),
-        onPressed: () => context.pop(),
+        onPressed: () {
+          final rootNavigator = Navigator.of(context, rootNavigator: true);
+          if (rootNavigator.canPop()) {
+            rootNavigator.pop();
+            return;
+          }
+          context.go('/');
+        },
       ),
       backgroundColor: backgroundColor,
       foregroundColor: resolvedForegroundColor,

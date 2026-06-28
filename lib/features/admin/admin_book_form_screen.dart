@@ -45,6 +45,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titulo;
   late final TextEditingController _autor;
+  late final TextEditingController _authorNationality;
   late final TextEditingController _descricao;
   late final TextEditingController _paginas;
   late final TextEditingController _preco;
@@ -66,27 +67,37 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
   List<Editora> _editoras = [];
   int? _selectedEditoraId;
   String? _suggestedEditoraNome;
+  List<String> _nationalities = [];
 
   @override
   void initState() {
     super.initState();
     _titulo = TextEditingController();
     _autor = TextEditingController();
+    _authorNationality = TextEditingController();
     _descricao = TextEditingController();
     _paginas = TextEditingController();
     _preco = TextEditingController();
     _estoque = TextEditingController();
 
-    for (final c in [_titulo, _autor, _descricao, _paginas, _preco, _estoque]) {
+    for (final c in [_titulo, _autor, _authorNationality, _descricao, _paginas, _preco, _estoque]) {
       c.addListener(() {
         if (mounted) setState(() {});
       });
     }
     _lookupController.addListener(_onLookupQueryChanged);
     _loadEditoras();
+    _fetchNationalities();
     if (widget.isEditing) {
       _loadBook();
     }
+  }
+
+  Future<void> _fetchNationalities() async {
+    try {
+      final list = await ref.read(adminRepositoryProvider).listAuthorNationalities();
+      if (mounted) setState(() => _nationalities = list);
+    } catch (_) {}
   }
 
   Future<void> _loadBook() async {
@@ -100,6 +111,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
       setState(() {
         _titulo.text = book.titulo;
         _autor.text = book.autor;
+        _authorNationality.text = book.autorNacionalidade ?? '';
         _descricao.text = book.descricao ?? '';
         _paginas.text = book.paginas > 0 ? '${book.paginas}' : '';
         _preco.text = book.preco;
@@ -132,6 +144,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
     _lookupController.dispose();
     _titulo.dispose();
     _autor.dispose();
+    _authorNationality.dispose();
     _descricao.dispose();
     _paginas.dispose();
     _preco.dispose();
@@ -372,6 +385,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
           editoraId: _selectedEditoraId!,
           titulo: _titulo.text.trim(),
           autor: _autor.text.trim(),
+          authorNationality: _authorNationality.text.trim().isEmpty ? null : _authorNationality.text.trim(),
           preco: _preco.text.trim(),
           estoque: _estoque.text.trim(),
           genero: _genero,
@@ -385,6 +399,7 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
           editoraId: _selectedEditoraId!,
           titulo: _titulo.text.trim(),
           autor: _autor.text.trim(),
+          authorNationality: _authorNationality.text.trim().isEmpty ? null : _authorNationality.text.trim(),
           genero: _genero,
           descricao: _descricao.text.trim().isEmpty ? null : _descricao.text.trim(),
           openLibraryCoverId: imageFile == null ? _openLibraryCoverId : null,
@@ -868,6 +883,35 @@ class _AdminBookFormScreenState extends ConsumerState<AdminBookFormScreen> {
                                     onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                     decoration: const InputDecoration(labelText: 'Autor', prefixIcon: Icon(Icons.person_outline_rounded)),
                                     validator: (v) => v == null || v.trim().isEmpty ? 'Informe o autor' : null,
+                                  ),
+                                  const SizedBox(height: 14),
+                                    Autocomplete<String>(
+                                      optionsBuilder: (TextEditingValue textEditingValue) {
+                                        final q = textEditingValue.text.toLowerCase();
+                                        if (q.isEmpty) return _nationalities;
+                                        return _nationalities.where((e) => e.toLowerCase().contains(q)).toList();
+                                      },
+                                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                                        controller.text = _authorNationality.text;
+                                        controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+                                        controller.addListener(() {
+                                          _authorNationality.text = controller.text;
+                                        });
+                                        return TextFormField(
+                                          controller: controller,
+                                          focusNode: focusNode,
+                                          decoration: const InputDecoration(labelText: 'Nacionalidade do autor'),
+                                          validator: (v) {
+                                            final val = v?.trim() ?? '';
+                                            if (val.isEmpty) return null;
+                                            if (!_nationalities.contains(val)) return 'Selecione uma nacionalidade existente';
+                                            return null;
+                                          },
+                                        );
+                                      },
+                                      onSelected: (selection) {
+                                        _authorNationality.text = selection;
+                                      },
                                   ),
                                   const SizedBox(height: 14),
                                   TextFormField(

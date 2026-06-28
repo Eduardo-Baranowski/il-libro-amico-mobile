@@ -186,6 +186,16 @@ class AccountScreen extends ConsumerWidget {
                 title: 'Editoras',
                 onTap: () => context.push('/admin/editoras'),
               ),
+              _MenuTile(
+                icon: Icons.person_rounded,
+                title: 'Autores',
+                onTap: () => context.push('/admin/autores'),
+              ),
+              _MenuTile(
+                icon: Icons.flag_outlined,
+                title: 'Nacionalidades',
+                onTap: () => context.push('/admin/nacionalidades'),
+              ),
             ],
           ),
         ],

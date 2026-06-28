@@ -1084,10 +1084,11 @@ class _SkoobDetailItem extends StatelessWidget {
   const _SkoobDetailItem({required this.icon, required this.text});
 
   final IconData icon;
-  final String text;
+  final String? text;
 
   @override
   Widget build(BuildContext context) {
+    if (text == null || text!.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(right: 20, bottom: 10),
       child: Row(
@@ -1107,7 +1108,7 @@ class _SkoobDetailItem extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            text,
+            text!,
             style: AppTheme.bodySans.copyWith(
               fontSize: 14.5,
               color: AppTheme.onSurfaceVariant,

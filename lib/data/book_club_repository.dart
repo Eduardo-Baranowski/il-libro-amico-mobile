@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/api_client.dart';
+import '../core/models/admin_editor_models.dart';
 import '../core/models/book_club_models.dart';
 import '../core/providers.dart';
 
@@ -119,21 +120,91 @@ class BookClubRepository {
     );
   }
 
+  Future<List<Editora>> listEditoras({String? search}) {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    return _api.get(
+      '/reader/editoras',
+      query: query,
+      parser: (data) => (data as List)
+          .whereType<Map<String, dynamic>>()
+          .map(Editora.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<Editora> createEditora({
+    required String nome,
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+  }) async {
+    final body = <String, String>{'nome': nome};
+    final res = await _api.postMultipart<Map<String, dynamic>>(
+      '/reader/editoras',
+      fields: body,
+      file: imageFile,
+      parser: (d) => d as Map<String, dynamic>,
+    );
+    return Editora.fromJson(res);
+  }
+
+  Future<Editora?> _findExistingEditoraByName(String nome) async {
+    final normalized = nome.trim().toLowerCase();
+    final editoras = await listEditoras(search: nome);
+    for (final editora in editoras) {
+      if (editora.nome.trim().toLowerCase() == normalized) {
+        return editora;
+      }
+    }
+    return null;
+  }
+
   Future<BookClubNomination> nominate(
     int clubId, {
     int? livroId,
     String? titulo,
     String? autor,
+    int? editoraId,
+    String? editora,
     String? motivo,
-  }) {
+    ({String fieldName, String filePath, String mimeType})? imageFile,
+    ({String fieldName, String filePath, String mimeType})? editoraImageFile,
+  }) async {
+    int? finalEditoraId = editoraId;
+    String? finalEditora = editora;
+
+    if (editoraImageFile != null && finalEditoraId == null && finalEditora != null && finalEditora.isNotEmpty) {
+      final existingEditora = await _findExistingEditoraByName(finalEditora);
+      if (existingEditora != null) {
+        finalEditoraId = existingEditora.id;
+        finalEditora = null;
+      } else {
+        final createdEditora = await createEditora(nome: finalEditora, imageFile: editoraImageFile);
+        finalEditoraId = createdEditora.id;
+        finalEditora = null;
+      }
+    }
+
+    final fields = <String, String>{
+      if (livroId != null) 'livro_id': livroId.toString(),
+      if (titulo != null) 'titulo': titulo,
+      if (autor != null) 'autor': autor,
+      if (finalEditoraId != null) 'editora_id': finalEditoraId.toString(),
+      if (finalEditora != null && finalEditora.isNotEmpty) 'editora': finalEditora,
+      if (motivo != null && motivo.isNotEmpty) 'motivo': motivo,
+    };
+
+    if (imageFile != null) {
+      return _api.postMultipart(
+        '/reader/book-club/$clubId/nominations',
+        fields: fields,
+        file: imageFile,
+        parser: (data) => BookClubNomination.fromJson(data as Map<String, dynamic>),
+      );
+    }
+
     return _api.post(
       '/reader/book-club/$clubId/nominations',
-      body: {
-        if (livroId != null) 'livro_id': livroId,
-        if (titulo != null) 'titulo': titulo,
-        if (autor != null) 'autor': autor,
-        if (motivo != null && motivo.isNotEmpty) 'motivo': motivo,
-      },
+      body: fields,
       parser: (data) => BookClubNomination.fromJson(data as Map<String, dynamic>),
     );
   }
@@ -142,6 +213,13 @@ class BookClubRepository {
     return _api.post(
       '/reader/book-club/$clubId/nominations/$nominationId/vote',
       parser: (data) => BookClubVoteResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<Map<String, dynamic>> deleteNomination(int clubId, int nominationId) {
+    return _api.delete(
+      '/reader/book-club/$clubId/nominations/$nominationId',
+      parser: (data) => data as Map<String, dynamic>,
     );
   }
 

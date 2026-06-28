@@ -9,10 +9,12 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
 import '../../core/models/models.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/image_mime.dart';
 import '../../core/widgets/bibliotheca.dart';
 import '../../core/widgets/book_cover.dart';
 import '../../data/reader_repository.dart';
+import '../../data/admin_repository.dart';
 
 enum _RegisterStep { isbn, confirm }
 
@@ -47,6 +49,7 @@ class _ReaderBookRegisterScreenState
   final _isbnController = TextEditingController();
   final _tituloController = TextEditingController();
   final _autorController = TextEditingController();
+  final _authorNationalityController = TextEditingController();
   final _descricaoController = TextEditingController();
   final _paginasController = TextEditingController();
 
@@ -59,6 +62,7 @@ class _ReaderBookRegisterScreenState
   bool _manualMode = false;
   bool _addToShelf = true;
   String _genero = 'Romance';
+  List<String> _nationalities = [];
 
   String? _coverPreviewUrl;
   int? _openLibraryCoverId;
@@ -71,6 +75,14 @@ class _ReaderBookRegisterScreenState
       _step = _RegisterStep.confirm;
       _loadBookForEdit();
     }
+    _fetchNationalities();
+  }
+
+  Future<void> _fetchNationalities() async {
+    try {
+      final list = await ref.read(adminRepositoryProvider).listAuthorNationalities();
+      if (mounted) setState(() => _nationalities = list);
+    } catch (_) {}
   }
 
   @override
@@ -80,6 +92,7 @@ class _ReaderBookRegisterScreenState
     _autorController.dispose();
     _descricaoController.dispose();
     _paginasController.dispose();
+    _authorNationalityController.dispose();
     super.dispose();
   }
 
@@ -343,7 +356,7 @@ class _ReaderBookRegisterScreenState
 
     try {
       final repo = ref.read(readerRepositoryProvider);
-      if (widget.isEditing) {
+        if (widget.isEditing) {
         await repo.updateBook(
           id: widget.bookId!,
           titulo: titulo,
@@ -356,6 +369,7 @@ class _ReaderBookRegisterScreenState
           paginas: pInt,
           imageFile: imageFile,
           openLibraryCoverId: openLibraryCoverId,
+          // reader update route doesn't currently accept authorNationality in repo.updateBook
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -377,6 +391,7 @@ class _ReaderBookRegisterScreenState
           openLibraryCoverId: openLibraryCoverId,
           addToShelf: _addToShelf,
           imageFile: imageFile,
+          authorNationality: _authorNationalityController.text.trim().isEmpty ? null : _authorNationalityController.text.trim(),
         );
         if (!mounted) return;
         ScaffoldMessenger.of(
@@ -452,6 +467,35 @@ class _ReaderBookRegisterScreenState
           textInputAction: TextInputAction.next,
           onSubmitted: (_) => FocusScope.of(context).nextFocus(),
           decoration: const InputDecoration(labelText: 'Autor(es)'),
+        ),
+        const SizedBox(height: 12),
+        Autocomplete<String>(
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            final q = textEditingValue.text.toLowerCase();
+            if (q.isEmpty) return _nationalities;
+            return _nationalities.where((e) => e.toLowerCase().contains(q)).toList();
+          },
+          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            controller.text = _authorNationalityController.text;
+            controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+            controller.addListener(() {
+              _authorNationalityController.text = controller.text;
+            });
+            return TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              decoration: const InputDecoration(labelText: 'Nacionalidade do autor'),
+              validator: (v) {
+                final val = v?.trim() ?? '';
+                if (val.isEmpty) return null;
+                if (!_nationalities.contains(val)) return 'Selecione uma nacionalidade existente';
+                return null;
+              },
+            );
+          },
+          onSelected: (s) => _authorNationalityController.text = s,
         ),
         const SizedBox(height: 12),
         TextField(

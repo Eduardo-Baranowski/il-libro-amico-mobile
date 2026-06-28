@@ -6,6 +6,9 @@ import '../core/auth/auth_notifier.dart';
 import '../core/models/models.dart';
 import '../features/admin/admin_books_screen.dart';
 import '../features/admin/admin_editoras_screen.dart';
+import '../features/admin/admin_nacionalidades_screen.dart';
+import '../features/admin/admin_autores_screen.dart';
+import '../features/admin/admin_author_form_screen.dart';
 import '../features/admin/admin_book_form_screen.dart';
 import '../features/admin/admin_reports_screen.dart';
 import '../features/admin/admin_users_screen.dart';
@@ -307,6 +310,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/editoras',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AdminEditorasScreen(),
+      ),
+      GoRoute(
+        path: '/admin/nacionalidades',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AdminNacionalidadesScreen(),
+      ),
+      GoRoute(
+        path: '/admin/autores',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AdminAutoresScreen(),
+      ),
+      GoRoute(
+        path: '/admin/autores/novo',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AdminAuthorFormScreen(),
+      ),
+      GoRoute(
+        path: '/admin/autores/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AdminAuthorFormScreen(authorId: id);
+        },
       ),
       GoRoute(
         path: '/editor/livro/novo',

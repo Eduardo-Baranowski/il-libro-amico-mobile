@@ -50,6 +50,8 @@ class AutorScreen extends ConsumerWidget {
               pinned: true,
               backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
+              leading: const BackButton(color: AppTheme.surfaceWhite),
+              iconTheme: const IconThemeData(color: AppTheme.surfaceWhite),
               flexibleSpace: FlexibleSpaceBar(
                 title: Text(
                   profile.nome,
@@ -123,32 +125,38 @@ class AutorScreen extends ConsumerWidget {
                         child: InkWell(
                           onTap: () => context.push('/livro/${livro.id}'),
                           child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                BookCover(url: livro.imagemUrl, width: 48, height: 68, borderRadius: 8),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        livro.titulo,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTheme.titleSerif.copyWith(fontSize: 15),
-                                      ),
-                                      if (livro.genero != null) ...[
-                                        const SizedBox(height: 4),
-                                        Text(livro.genero!, style: AppTheme.captionSans),
-                                      ],
-                                    ],
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  InkWell(
+                                    onTap: () => context.push('/livro/${livro.id}'),
+                                    child: BookCover(url: livro.imagemUrl, width: 48, height: 68, borderRadius: 8),
                                   ),
-                                ),
-                                const Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        InkWell(
+                                          onTap: () => context.push('/livro/${livro.id}'),
+                                          child: Text(
+                                            livro.titulo,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTheme.titleSerif.copyWith(fontSize: 15),
+                                          ),
+                                        ),
+                                        if (livro.genero != null) ...[
+                                          const SizedBox(height: 4),
+                                          Text(livro.genero!, style: AppTheme.captionSans),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
+                                ],
+                              ),
                             ),
-                          ),
                         ),
                       ),
                     );

@@ -21,6 +21,72 @@ class Editora {
       );
 }
 
+class NacionalidadeAdmin {
+  NacionalidadeAdmin({
+    required this.id,
+    required this.nome,
+    this.flagUrl,
+    required this.criadoEm,
+  });
+
+  final int id;
+  final String nome;
+  final String? flagUrl;
+  final String criadoEm;
+
+  factory NacionalidadeAdmin.fromJson(Map<String, dynamic> json) => NacionalidadeAdmin(
+        id: json['id'] as int,
+        nome: json['nome'] as String? ?? '',
+        flagUrl: json['flag'] as String?,
+        criadoEm: json['criado_em'] as String? ?? '',
+      );
+}
+
+class AdminAuthor {
+  AdminAuthor({
+    required this.id,
+    required this.nome,
+    this.imagemUrl,
+    this.nacionalidade,
+  });
+
+  final int id;
+  final String nome;
+  final String? imagemUrl;
+  final String? nacionalidade;
+
+  factory AdminAuthor.fromJson(Map<String, dynamic> json) => AdminAuthor(
+        id: json['id'] as int,
+        nome: json['nome'] as String? ?? '',
+        imagemUrl: json['imagem_url'] as String?,
+        nacionalidade: json['nacionalidade'] as String?,
+      );
+}
+
+class AdminAuthorDetail {
+  AdminAuthorDetail({
+    required this.id,
+    required this.nome,
+    this.bio,
+    this.imagemUrl,
+    this.nacionalidade,
+  });
+
+  final int id;
+  final String nome;
+  final String? bio;
+  final String? imagemUrl;
+  final String? nacionalidade;
+
+  factory AdminAuthorDetail.fromJson(Map<String, dynamic> json) => AdminAuthorDetail(
+        id: json['id'] as int,
+        nome: json['nome'] as String? ?? '',
+        bio: json['bio'] as String?,
+        imagemUrl: json['imagem_url'] as String?,
+        nacionalidade: json['nacionalidade'] as String?,
+      );
+}
+
 class AdminUser {
   AdminUser({
     required this.id,
@@ -310,6 +376,7 @@ class AdminBook {
     required this.id,
     required this.titulo,
     required this.autor,
+    this.autorNacionalidade,
     required this.editorNome,
     this.editorId,
     this.editoraId,
@@ -322,6 +389,7 @@ class AdminBook {
   final int id;
   final String titulo;
   final String autor;
+  final String? autorNacionalidade;
   final String editorNome;
   final int? editorId;
   final int? editoraId;
@@ -333,7 +401,8 @@ class AdminBook {
   factory AdminBook.fromJson(Map<String, dynamic> json) => AdminBook(
         id: json['id'] as int,
         titulo: json['titulo'] as String? ?? '',
-        autor: json['autor'] as String? ?? '',
+      autor: json['autor'] as String? ?? '',
+      autorNacionalidade: json['author_nationality'] as String? ?? json['autor_nacionalidade'] as String? ?? json['nacionalidade_autor'] as String?,
         editorNome: json['editor_nome'] as String? ?? '',
         editorId: json['editor_id'] as int?,
         editoraId: json['editora_id'] as int?,
@@ -357,6 +426,7 @@ class AdminBookDetail {
     this.genero,
     this.descricao,
     this.imagemUrl,
+    this.autorNacionalidade,
     this.paginas = 0,
   });
 
@@ -371,6 +441,7 @@ class AdminBookDetail {
   final String? genero;
   final String? descricao;
   final String? imagemUrl;
+  final String? autorNacionalidade;
   final int paginas;
 
   factory AdminBookDetail.fromJson(Map<String, dynamic> json) => AdminBookDetail(
@@ -385,6 +456,7 @@ class AdminBookDetail {
         genero: json['genero'] as String?,
         descricao: json['descricao'] as String?,
         imagemUrl: json['imagem_url'] as String?,
+        autorNacionalidade: json['author_nationality'] as String? ?? json['autor_nacionalidade'] as String? ?? json['nacionalidade_autor'] as String?,
         paginas: json['paginas'] as int? ?? 0,
       );
 }

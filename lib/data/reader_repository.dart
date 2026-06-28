@@ -288,6 +288,7 @@ class ReaderRepository {
     bool addToShelf = true,
     String shelfStatus = 'quero_ler',
     ({String fieldName, String filePath, String mimeType})? imageFile,
+    String? authorNationality,
   }) async {
     final fields = <String, String>{
       'titulo': titulo,
@@ -299,6 +300,7 @@ class ReaderRepository {
       if (isbn != null) 'isbn': isbn,
       if (paginas != null) 'paginas': paginas.toString(),
       if (openLibraryCoverId != null) 'open_library_cover_id': openLibraryCoverId.toString(),
+      if (authorNationality != null) 'author_nationality': authorNationality,
     };
 
     final res = await _api.postMultipart<Map<String, dynamic>>(
@@ -327,6 +329,7 @@ class ReaderRepository {
     int? paginas,
     int? openLibraryCoverId,
     ({String fieldName, String filePath, String mimeType})? imageFile,
+    String? authorNationality,
   }) async {
     final fields = <String, String>{};
     if (titulo != null) fields['titulo'] = titulo;
@@ -338,6 +341,7 @@ class ReaderRepository {
     if (openLibraryCoverId != null) {
       fields['open_library_cover_id'] = openLibraryCoverId.toString();
     }
+    if (authorNationality != null) fields['author_nationality'] = authorNationality;
     await _api.putMultipart('/reader/books/$id', fields: fields, file: imageFile);
   }
 }

@@ -79,6 +79,14 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 _FormatsCard(stats.formats),
                 const SizedBox(height: 14),
                 _LanguagesCard(stats.languages),
+                const SizedBox(height: 14),
+                _PeopleCard(
+                  title: 'Nacionalidade dos autores lidos',
+                  items: stats.nationalities
+                      .map((n) => StatsPersonOrPublisher(name: n.name, count: n.count, imageUrl: null))
+                      .toList(),
+                  icon: Icons.public_rounded,
+                ),
                 const SizedBox(height: 18),
                 Text(
                   'A estatística é baseada apenas nos livros lidos.',
@@ -761,7 +769,27 @@ class _PeopleCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       children: [
-                        UserAvatar(url: item.imageUrl, name: item.name, radius: 32),
+                        // Mostrar bandeira/ícone específico para nacionalidades comuns
+                        Builder(builder: (context) {
+                          final name = item.name.toLowerCase();
+                          if (name.contains('brasil') || name.contains('brasileir')) {
+                            return CircleAvatar(
+                              radius: 32,
+                              backgroundColor: AppTheme.secondaryContainer,
+                              child: const Text('🇧🇷', style: TextStyle(fontSize: 28)),
+                            );
+                          }
+
+                          if (name.contains('estrange')) {
+                            return CircleAvatar(
+                              radius: 32,
+                              backgroundColor: AppTheme.surfaceWhite,
+                              child: Icon(Icons.public_rounded, color: AppTheme.primary, size: 26),
+                            );
+                          }
+
+                          return UserAvatar(url: item.imageUrl, name: item.name, radius: 32);
+                        }),
                         const SizedBox(height: 10),
                         Text(
                           item.name,

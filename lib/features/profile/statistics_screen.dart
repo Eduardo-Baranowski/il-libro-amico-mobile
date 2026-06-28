@@ -762,12 +762,7 @@ class _PeopleCard extends StatelessWidget {
                     child: Column(
                       children: [
                         UserAvatar(url: item.imageUrl, name: item.name, radius: 32),
-                        if (item.imageUrl == null || item.imageUrl!.isEmpty)
-                          Transform.translate(
-                            offset: const Offset(0, -46),
-                            child: Icon(icon, size: 24, color: AppTheme.onSecondaryContainer.withValues(alpha: 0.55)),
-                          ),
-                        SizedBox(height: (item.imageUrl == null || item.imageUrl!.isEmpty) ? 0 : 10),
+                        const SizedBox(height: 10),
                         Text(
                           item.name,
                           maxLines: 2,

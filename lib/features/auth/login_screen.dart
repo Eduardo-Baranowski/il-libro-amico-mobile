@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/auth_notifier.dart';
+import '../../core/theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -48,48 +49,211 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final loading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Entrar')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (v) =>
-                    v == null || !v.contains('@') ? 'Email inválido' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _senha,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submit(),
-                decoration: const InputDecoration(labelText: 'Senha'),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Informe a senha' : null,
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Colors.red)),
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        final router = GoRouter.of(context);
+                        if (router.canPop()) {
+                          router.pop();
+                        } else {
+                          router.go('/');
+                        }
+                      },
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      color: AppTheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Entrar',
+                      style: AppTheme.headlineSerif.copyWith(
+                        fontSize: 24,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceWhite,
+                    borderRadius: AppTheme.radiusXl,
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        child: Stack(
+                          children: [
+                            Image.asset(
+                              'assets/images/login/login_cover.png',
+                              height: 220,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 220,
+                                  alignment: Alignment.center,
+                                  color: AppTheme.surfaceContainer,
+                                  child: Container(
+                                    width: 120,
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.surfaceWhite,
+                                      borderRadius: BorderRadius.circular(32),
+                                      boxShadow: AppTheme.cardShadow,
+                                    ),
+                                    child: Icon(
+                                      Icons.menu_book_rounded,
+                                      size: 64,
+                                      color: AppTheme.primary,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.center,
+                                    colors: [
+                                      AppTheme.surfaceWhite.withValues(alpha: 0.92),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Bem-vindo de volta',
+                              style: AppTheme.headlineSerif.copyWith(
+                                fontSize: 26,
+                                color: AppTheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Acesse sua conta para continuar gerenciando leituras, livros e recomendações.',
+                              style: AppTheme.bodySans.copyWith(
+                                color: AppTheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  TextFormField(
+                                    controller: _email,
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Email',
+                                    ),
+                                    validator: (v) =>
+                                        v == null || !v.contains('@') ? 'Email inválido' : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _senha,
+                                    obscureText: true,
+                                    textInputAction: TextInputAction.done,
+                                    onFieldSubmitted: (_) => _submit(),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Senha',
+                                    ),
+                                    validator: (v) =>
+                                        v == null || v.isEmpty ? 'Informe a senha' : null,
+                                  ),
+                                  if (_error != null) ...[
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _error!,
+                                      style: AppTheme.bodySans.copyWith(
+                                        color: AppTheme.error,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 24),
+                                  FilledButton(
+                                    onPressed: loading ? null : _submit,
+                                    child: Text(loading ? 'Entrando…' : 'Entrar'),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextButton(
+                                    onPressed: () {},
+                                    child: Text(
+                                      'Esqueceu a senha?',
+                                      style: AppTheme.bodySans.copyWith(
+                                        color: AppTheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: TextButton(
+                                      onPressed: () => context.push('/cadastro'),
+                                      child: Text(
+                                        'Criar conta de leitor',
+                                        style: AppTheme.bodySans.copyWith(
+                                          color: AppTheme.primary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.auto_stories_rounded,
+                      size: 18,
+                      color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Sua jornada literária continua aqui',
+                      style: AppTheme.bodySans.copyWith(
+                        color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ],
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: loading ? null : _submit,
-                child: Text(loading ? 'Entrando…' : 'Entrar'),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => context.push('/cadastro'),
-                child: const Text('Criar conta de leitor'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -30,6 +30,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   _SearchScope _scope = _SearchScope.all;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runSearch('');
+    });
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
@@ -38,7 +46,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _onQueryChanged(String value) {
     _debounce?.cancel();
-    if (value.trim().length < 2) {
+    final trimmed = value.trim();
+    _debounce?.cancel();
+    if (trimmed.isEmpty) {
+      _runSearch('');
+      return;
+    }
+    if (trimmed.length < 2) {
       setState(() {
         _result = null;
         _error = null;
@@ -46,7 +60,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       });
       return;
     }
-    _debounce = Timer(const Duration(milliseconds: 400), () => _runSearch(value.trim()));
+    _debounce = Timer(const Duration(milliseconds: 400), () => _runSearch(trimmed));
   }
 
   Future<void> _runSearch(String q) async {
@@ -163,9 +177,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             ),
                           ],
                           if (books.isEmpty && users.isEmpty && editors.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 40),
-                              child: Center(child: Text('Nenhum resultado')),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 40),
+                              child: Column(
+                                children: [
+                                  const Center(child: Text('Nenhum resultado')),
+                                  if ((_scope == _SearchScope.all || _scope == _SearchScope.books) && _controller.text.trim().length >= 2) ...[
+                                    const SizedBox(height: 16),
+                                    FilledButton.icon(
+                                      onPressed: () => context.push('/livros/cadastrar'),
+                                      icon: const Icon(Icons.add),
+                                      label: const Text('Cadastrar novo livro'),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Se o livro não foi encontrado, você pode cadastrá-lo no catálogo.',
+                                      textAlign: TextAlign.center,
+                                      style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                         ],
                       ),

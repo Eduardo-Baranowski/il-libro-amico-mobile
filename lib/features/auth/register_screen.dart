@@ -148,6 +148,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               controller: _nome,
                               textInputAction: TextInputAction.next,
                               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textCapitalization: TextCapitalization.words,
+                              onTapOutside: (_) => FocusScope.of(context).unfocus(),
                               decoration: const InputDecoration(labelText: 'Nome completo'),
                               validator: (v) =>
                                   v == null || v.trim().isEmpty ? 'Informe o nome' : null,
@@ -158,6 +162,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              autofillHints: const [AutofillHints.email],
+                              onTapOutside: (_) => FocusScope.of(context).unfocus(),
                               decoration: const InputDecoration(labelText: 'E-mail'),
                               validator: (v) =>
                                   v == null || !v.contains('@') ? 'Email inválido' : null,
@@ -168,75 +176,109 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               obscureText: true,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              autofillHints: const [AutofillHints.newPassword],
+                              onTapOutside: (_) => FocusScope.of(context).unfocus(),
                               decoration: const InputDecoration(labelText: 'Senha'),
                               validator: (v) => v == null || v.length < 6
                                   ? 'Mínimo 6 caracteres'
                                   : null,
                             ),
                             const SizedBox(height: 20),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Checkbox(
-                                  value: _termsAccepted,
-                                  activeColor: AppTheme.primary,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6)),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _termsAccepted = value ?? false;
-                                      _error = null;
-                                    });
-                                  },
-                                ),
+                            Semantics(
+                              label: 'Aceitar termos de uso e política de privacidade',
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Checkbox(
+                                    value: _termsAccepted,
+                                    activeColor: AppTheme.primary,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6)),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _termsAccepted = value ?? false;
+                                        _error = null;
+                                      });
+                                    },
+                                  ),
                                 const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text.rich(
-                                    TextSpan(
-                                      text: 'Concordo com os ',
-                                      style: AppTheme.bodySans.copyWith(
-                                        color: AppTheme.onSurfaceVariant,
+                                  Expanded(
+                                    child: Text.rich(
+                                      TextSpan(
+                                        text: 'Concordo com os ',
+                                        style: AppTheme.bodySans.copyWith(
+                                          color: AppTheme.onSurfaceVariant,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'Termos de Uso',
+                                            style: AppTheme.bodySans.copyWith(
+                                              color: AppTheme.primary,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: ' e a ',
+                                            style: AppTheme.bodySans.copyWith(
+                                              color: AppTheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: 'Política de Privacidade',
+                                            style: AppTheme.bodySans.copyWith(
+                                              color: AppTheme.primary,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      children: [
-                                        TextSpan(
-                                          text: 'Termos de Uso',
-                                          style: AppTheme.bodySans.copyWith(
-                                            color: AppTheme.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: ' e a ',
-                                          style: AppTheme.bodySans.copyWith(
-                                            color: AppTheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: 'Política de Privacidade',
-                                          style: AppTheme.bodySans.copyWith(
-                                            color: AppTheme.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             if (_error != null) ...[
                               const SizedBox(height: 12),
-                              Text(
-                                _error!,
-                                style: AppTheme.bodySans.copyWith(
-                                  color: AppTheme.error,
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primarySoft,
+                                  borderRadius: AppTheme.radiusLg,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.error_outline_rounded, color: AppTheme.error),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _error!,
+                                        style: AppTheme.bodySans.copyWith(
+                                          color: AppTheme.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                             const SizedBox(height: 24),
-                            FilledButton(
-                              onPressed: loading ? null : _submit,
-                              child: Text(loading ? 'Cadastrando…' : 'Cadastrar'),
+                            Semantics(
+                              button: true,
+                              enabled: !loading,
+                              label: loading ? 'Cadastrando usuário' : 'Criar conta',
+                              child: FilledButton(
+                                onPressed: loading ? null : _submit,
+                                child: loading
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Text('Cadastrar'),
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Center(

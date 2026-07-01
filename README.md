@@ -48,10 +48,10 @@ flutter run -d chrome
 
 ## Funcionalidades
 
-- Feed da comunidade (`/reader/feed`)
-- Catálogo e detalhe do livro (leitores) / **meu catálogo** com CRUD (editores)
+- Feed da comunidade com estados de carregamento, erro e vazio (`/reader/feed`)
+- Catálogo e detalhe do livro com feedback visual para leitura, compra e resenhas
 - **Busca global** (`/reader/search`) — livros, usuários e editoras
-- Login / cadastro de leitor
+- Login / cadastro de leitor com validações visuais e mensagens de erro claras
 - Mensagens (lista + chat com polling)
 - Conta e logout
 - **Admin:** usuários e relatórios (`/admin/*`)
@@ -68,9 +68,18 @@ lib/
   routing/         # go_router + shell com abas
 ```
 
-## Testes
+## Testes e validação
 
 ```bash
+flutter pub get
 flutter analyze
 flutter test
 ```
+
+## Melhorias de interface implementadas
+
+- Feedback explícito para loading, erro e estados vazios
+- Mensagens de validação e erros em formulários
+- Acessibilidade básica em campos e ações principais
+- Consistência visual entre telas de autenticação, feed e detalhes do livro
+- Tratamento claro de retry e fallback em telas com falha de carregamento

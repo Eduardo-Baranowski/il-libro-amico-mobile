@@ -384,7 +384,19 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final cartItems = ref.watch(cartProvider);
 
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 12),
+              Text('Carregando detalhes do livro…', style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      );
     }
     if (_error != null || _book == null) {
       return Scaffold(
@@ -392,7 +404,35 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           title: const Text('Detalhes'),
           backgroundColor: AppTheme.background,
         ),
-        body: Center(child: Text(_error ?? 'Erro')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded, size: 40, color: AppTheme.primary),
+                const SizedBox(height: 12),
+                Text(
+                  'Não foi possível carregar este livro.',
+                  style: AppTheme.titleSerif.copyWith(fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error ?? 'Tente novamente em instantes.',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.bodySans.copyWith(color: AppTheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _load,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 

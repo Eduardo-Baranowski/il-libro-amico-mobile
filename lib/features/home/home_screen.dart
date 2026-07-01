@@ -599,6 +599,7 @@ class _FeedCard extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.share_outlined, color: AppTheme.onSurfaceVariant),
+                  tooltip: 'Compartilhar atividade',
                   onPressed: onShare,
                 ),
               ],

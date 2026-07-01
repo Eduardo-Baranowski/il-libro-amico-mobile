@@ -169,6 +169,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     keyboardType: TextInputType.emailAddress,
                                     textInputAction: TextInputAction.next,
                                     onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                                    autocorrect: false,
+                                    enableSuggestions: false,
+                                    autofillHints: const [AutofillHints.email],
+                                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                                     decoration: const InputDecoration(
                                       labelText: 'Email',
                                     ),
@@ -181,6 +185,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     obscureText: true,
                                     textInputAction: TextInputAction.done,
                                     onFieldSubmitted: (_) => _submit(),
+                                    autocorrect: false,
+                                    enableSuggestions: false,
+                                    autofillHints: const [AutofillHints.password],
+                                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                                     decoration: const InputDecoration(
                                       labelText: 'Senha',
                                     ),
@@ -189,17 +197,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                   if (_error != null) ...[
                                     const SizedBox(height: 12),
-                                    Text(
-                                      _error!,
-                                      style: AppTheme.bodySans.copyWith(
-                                        color: AppTheme.error,
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primarySoft,
+                                        borderRadius: AppTheme.radiusLg,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(Icons.error_outline_rounded, color: AppTheme.error),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              _error!,
+                                              style: AppTheme.bodySans.copyWith(
+                                                color: AppTheme.error,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                   const SizedBox(height: 24),
-                                  FilledButton(
-                                    onPressed: loading ? null : _submit,
-                                    child: Text(loading ? 'Entrando…' : 'Entrar'),
+                                  Semantics(
+                                    button: true,
+                                    enabled: !loading,
+                                    label: loading ? 'Entrando na conta' : 'Entrar na conta',
+                                    child: FilledButton(
+                                      onPressed: loading ? null : _submit,
+                                      child: loading
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                            )
+                                          : const Text('Entrar'),
+                                    ),
                                   ),
                                   const SizedBox(height: 12),
                                   TextButton(
